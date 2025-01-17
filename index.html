@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <!-- Anpassung der viewport-Einstellungen zur Verhinderung des Zoomens -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Schichtplanung</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-color: #f5f5f5;
+            --white: #ffffff;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --button-padding: 14px 20px;
+            --button-font-size: 1.1em;
+            --remove-button-size: 24px;
+            --small-remove-button-size: 18px;
+            --header-height: 60px;
+            --header-font-size: 1.4em;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 0 20px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: var(--header-font-size);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .title {
+            font-weight: bold;
+        }
+
+        #welcomeUser {
+            font-size: 1em;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 100%;
+            margin: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        select, input[type="tel"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            transition: border-color var(--transition-speed);
+            font-size: 1em;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        button {
+            padding: var(--button-padding);
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            font-size: var(--button-font-size);
+            width: 100%;
+            margin-bottom: 18px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .remove-event, .remove {
+            background-color: var(--danger-color);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            width: var(--remove-button-size);
+            height: var(--remove-button-size);
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+        }
+
+        .remove-event:hover, .remove:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
+        }
+
+        .event {
+            background-color: var(--white);
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .event h3 {
+            font-size: 1.3em;
+            color: var(--primary-color);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .event p {
+            margin: 0;
+            font-size: 1em;
+        }
+
+        .remove-event {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: var(--remove-button-size);
+            height: var(--remove-button-size);
+            border-radius: 50%;
+            font-size: 1em;
+        }
+
+        .availability {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .name-item {
+            background-color: #e9ecef;
+            padding: 8px 14px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.95em;
+            margin-bottom: 6px;
+        }
+
+        .name-item .remove {
+            padding: 0;
+            width: var(--small-remove-button-size);
+            height: var(--small-remove-button-size);
+            font-size: 0.85em;
+            border-radius: 50%;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 25px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            overflow-x: auto;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            font-size: 1em;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .date-time {
+                flex-direction: column;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                height: auto;
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+            }
+
+            #welcomeUser {
+                font-size: 0.95em;
+            }
+
+            .event {
+                padding: 16px;
+            }
+
+            .remove-event {
+                top: 16px;
+                right: 16px;
+                width: 20px;
+                height: 20px;
+                font-size: 0.9em;
+            }
+
+            button {
+                padding: 12px 18px;
+                font-size: 1em;
+            }
+
+            .name-item {
+                padding: 6px 10px;
+                font-size: 0.85em;
+            }
+
+            .remove {
+                width: 16px;
+                height: 16px;
+                font-size: 0.75em;
+            }
+        }
+
+        /* Zusätzliche Styles für das "Sonstige" Textfeld */
+        #otherEventContainer {
+            display: none;
+            margin-bottom: 18px;
+        }
+
+        /* Styles für die collapsible Sektion */
+        .collapsible {
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            padding: 16px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 1.3em;
+            border-radius: var(--border-radius);
+            transition: background-color var(--transition-speed);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .collapsible:hover {
+            background-color: #0056b3;
+        }
+
+        .collapsible:after {
+            content: '\25BC'; /* Down arrow */
+            font-size: 1em;
+            transition: transform var(--transition-speed);
+        }
+
+        .active:after {
+            transform: rotate(180deg); /* Up arrow */
+        }
+
+        .content {
+            padding: 0 16px;
+            display: none;
+            overflow: hidden;
+            transition: max-height var(--transition-speed) ease-out;
+        }
+
+        /* Container für collapsible button zur Steuerung der Sichtbarkeit */
+        #addEventButtonContainer {
+            display: none; /* Standardmäßig versteckt */
+            margin-bottom: 25px;
+        }
+
+        /* Stil für den Willkommensbereich im Header */
+        /* Bereits im Header definiert */
+    </style>
+</head>
+<body>
+    <header>
+        <div class="title">G Schichtplanung</div>
+        <div id="welcomeUser" style="display: none;">Willkommen!</div>
+    </header>
+    <div class="container">
+        <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+        <div>
+            <label for="employeeSelect">Mitarbeiter auswählen:</label>
+            <select id="employeeSelect" onchange="handleLoginChange()">
+                <option value="">-- Wähle einen Namen --</option>
+                <option value="Moritz">Moritz</option>
+                <option value="Arnesa">Arnesa</option>
+                <option value="Fabi">Fabi</option>
+                <option value="Melissa">Melissa</option>
+                <option value="Gidde">Gidde</option>
+                <option value="Amer">Amer</option>
+                <option value="Gregor">Gregor</option>
+                <option value="Zeki">Zeki</option>
+            </select>
+            <div id="passwordField" style="display: none;">
+                <label for="passwordInput">PIN:</label>
+                <!-- Verwendung von input type="password" für verborgene Eingabe und numerische Eingabe -->
+                <input type="password" id="passwordInput" pattern="\d*" inputmode="numeric" placeholder="PIN eingeben" maxlength="6">
+                <button onclick="login()">Einloggen</button>
+            </div>
+            <hr>
+        </div>
+
+        <div class="content" id="eventForm">
+            <h3>Neues Event hinzufügen</h3>
+            <label for="eventName">Event Name:</label>
+            <select id="eventName" onchange="toggleOtherEvent()">
+                <option value="">-- Wähle ein Event --</option>
+                <option value="Bunkernacht">Bunkernacht</option>
+                <option value="Pferdreht">Pferdreht</option>
+                <option value="IDOLS">IDOLS</option>
+                <option value="Baracke">Baracke</option>
+                <option value="Crypt">Crypt</option>
+                <option value="Dancehall Station">Dancehall Station</option>
+                <option value="LOL">LOL</option>
+                <option value="sonstige">Sonstige</option>
+            </select>
+
+            <div id="otherEventContainer">
+                <label for="otherEvent">Sonstiges Event:</label>
+                <input type="text" id="otherEvent" placeholder="Event Name eingeben">
+            </div>
+
+            <!-- Datum und Startzeit in einer Zeile -->
+            <div class="date-time" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="eventDate">Datum:</label>
+                    <input type="date" id="eventDate">
+                </div>
+                <div style="flex: 1;">
+                    <label for="eventTime">Startzeit:</label>
+                    <input type="time" id="eventTime">
+                </div>
+            </div>
+
+            <button onclick="addEvent()">Event hinzufügen</button>
+            <hr>
+        </div>
+
+        <!-- Container für Events -->
+        <div id="eventContainer">
+            <!-- Dynamisch hinzugefügte Events erscheinen hier als Container -->
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Name</th>
+                    <th>Verfügbare Mitarbeiter</th>
+                </tr>
+            </thead>
+            <tbody id="availabilityTable">
+                <!-- Dynamisch hinzugefügte Events erscheinen hier -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Struktur für gespeicherte Daten: Array von Event-Objekten
+        let savedData = JSON.parse(localStorage.getItem('availabilityData')) || [];
+        let loggedInUser = null;
+        let canRemove = false;
+
+        // Setze das aktuelle Datum im Header
+        function setCurrentDate() {
+            const currentDateElement = document.getElementById('currentDate');
+            const today = new Date();
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
+            currentDateElement.textContent = today.toLocaleDateString('de-DE', options);
+        }
+
+        // Funktion zum Rendern aller Events im Container und in der Tabelle
+        function updateDisplay() {
+            renderEventContainer();
+            renderAvailabilityTable();
+        }
+
+        // Rendern der Event-Container
+        function renderEventContainer() {
+            const eventContainer = document.getElementById('eventContainer');
+            eventContainer.innerHTML = ''; // Container leeren
+
+            savedData.forEach((event, eventIndex) => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event';
+                eventDiv.innerHTML = `
+                    <p>${formatDate(event.datum)}</p>
+                    <h3>Event: ${event.name}</h3>
+                    <p>Startzeit: ${formatTime(event.startzeit)} Uhr</p>
+                    <button onclick="confirmForEvent(${eventIndex})">Bestätigen</button>
+                    ${canRemove ? `<button class="remove-event" onclick="removeEvent(${eventIndex})" title="Event löschen">x</button>` : ''}
+                `;
+                eventContainer.appendChild(eventDiv);
+            });
+        }
+
+        // Rendern der Verfügbarkeits-Tabelle
+        function renderAvailabilityTable() {
+            const tableBody = document.getElementById('availabilityTable');
+            tableBody.innerHTML = ''; // Tabelle leeren
+
+            savedData.forEach((event, eventIndex) => {
+                const row = document.createElement('tr');
+
+                // Datum
+                const datumCell = document.createElement('td');
+                datumCell.textContent = formatDate(event.datum);
+                row.appendChild(datumCell);
+
+                // Name
+                const nameCell = document.createElement('td');
+                nameCell.textContent = event.name;
+                row.appendChild(nameCell);
+
+                // Verfügbare Mitarbeiter
+                const mitarbeiterCell = document.createElement('td');
+                event.mitarbeiter.forEach((name, nameIndex) => {
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'name-item';
+                    nameSpan.textContent = name;
+
+                    if (canRemove) {
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove';
+                        removeBtn.textContent = 'x';
+                        removeBtn.title = 'Name entfernen';
+                        removeBtn.onclick = () => removeName(eventIndex, nameIndex);
+                        nameSpan.appendChild(removeBtn);
+                    }
+
+                    mitarbeiterCell.appendChild(nameSpan);
+                });
+                row.appendChild(mitarbeiterCell);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function login() {
+            const pin = document.getElementById('passwordInput').value;
+            const selectedEmployee = document.getElementById('employeeSelect').value;
+
+            if (!selectedEmployee) {
+                alert('Bitte wähle einen Mitarbeiter aus.');
+                return;
+            }
+
+            if (selectedEmployee === 'Fabi' && pin === '123') {
+                loggedInUser = selectedEmployee;
+                canRemove = true;
+                alert('Fabi ist eingeloggt. Lösch- und Erstellungsfunktionen aktiviert.');
+                document.getElementById('eventForm').style.display = 'block';
+            } else if (pin === '1234') {
+                loggedInUser = selectedEmployee;
+                canRemove = false;
+                alert(`${selectedEmployee} ist eingeloggt.`);
+                document.getElementById('eventForm').style.display = 'none';
+            } else {
+                alert('Falscher PIN.');
+                return;
+            }
+
+            // Aktualisiere den Header mit dem eingeloggten Benutzer
+            const welcomeUserElement = document.getElementById('welcomeUser');
+            welcomeUserElement.textContent = `Willkommen ${loggedInUser}!`;
+            welcomeUserElement.style.display = 'block';
+
+            document.getElementById('passwordField').style.display = 'none';
+            updateDisplay();
+        }
+
+        function handleLoginChange() {
+            loggedInUser = null;
+            canRemove = false;
+            document.getElementById('passwordField').style.display = 'block';
+            document.getElementById('eventForm').style.display = 'none';
+
+            // Entferne die Begrüßung aus dem Header
+            const welcomeUserElement = document.getElementById('welcomeUser');
+            welcomeUserElement.textContent = 'Willkommen!';
+            welcomeUserElement.style.display = 'none';
+        }
+
+        function confirmForEvent(eventIndex) {
+            if (!loggedInUser) {
+                alert('Bitte logge dich zuerst ein.');
+                return;
+            }
+
+            const event = savedData[eventIndex];
+            if (!event.mitarbeiter.includes(loggedInUser)) {
+                event.mitarbeiter.push(loggedInUser);
+                localStorage.setItem('availabilityData', JSON.stringify(savedData));
+                updateDisplay();
+            } else {
+                alert('Du bist bereits für dieses Event bestätigt.');
+            }
+        }
+
+        function removeName(eventIndex, nameIndex) {
+            if (canRemove) {
+                savedData[eventIndex].mitarbeiter.splice(nameIndex, 1);
+                localStorage.setItem('availabilityData', JSON.stringify(savedData));
+                updateDisplay();
+            }
+        }
+
+        function addEvent() {
+            if (!canRemove) {
+                alert('Nur Fabi kann Events erstellen.');
+                return;
+            }
+
+            let eventName = document.getElementById('eventName').value.trim();
+            const isOther = eventName === 'sonstige';
+            if (isOther) {
+                const otherEvent = document.getElementById('otherEvent').value.trim();
+                if (!otherEvent) {
+                    alert('Bitte gib den Namen des sonstigen Events ein.');
+                    return;
+                }
+                eventName = otherEvent;
+            }
+
+            const eventDate = document.getElementById('eventDate').value;
+            const eventTime = document.getElementById('eventTime').value;
+
+            if (!eventName || !eventDate || !eventTime) {
+                alert('Bitte alle Felder ausfüllen.');
+                return;
+            }
+
+            // Überprüfen, ob das Event bereits existiert
+            const exists = savedData.some(event => event.datum === eventDate && event.name.toLowerCase() === eventName.toLowerCase() && event.startzeit === eventTime);
+            if (exists) {
+                alert('Dieses Event existiert bereits.');
+                return;
+            }
+
+            const newEvent = {
+                datum: eventDate,
+                name: eventName,
+                startzeit: eventTime,
+                mitarbeiter: []
+            };
+
+            savedData.push(newEvent);
+            localStorage.setItem('availabilityData', JSON.stringify(savedData));
+
+            alert('Event hinzugefügt.');
+            // Reset Form
+            document.getElementById('eventForm').reset();
+            document.getElementById('otherEventContainer').style.display = 'none';
+            updateDisplay(); // Aktualisiert die Anzeige nach dem Hinzufügen
+        }
+
+        function removeEvent(eventIndex) {
+            if (!canRemove) {
+                alert('Nur Fabi kann Veranstaltungen löschen.');
+                return;
+            }
+
+            if (confirm('Bist du sicher, dass du dieses Event löschen möchtest?')) {
+                savedData.splice(eventIndex, 1);
+                localStorage.setItem('availabilityData', JSON.stringify(savedData));
+                updateDisplay();
+                alert('Event gelöscht.');
+            }
+        }
+
+        function toggleOtherEvent() {
+            const eventName = document.getElementById('eventName').value;
+            const otherEventContainer = document.getElementById('otherEventContainer');
+            if (eventName === 'sonstige') {
+                otherEventContainer.style.display = 'block';
+            } else {
+                otherEventContainer.style.display = 'none';
+            }
+        }
+
+        function formatDate(dateStr) {
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('de-DE', options);
+        }
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            return `${hours}:${minutes}`;
+        }
+
+        // Collapsible functionality (falls benötigt)
+        const collapsibles = document.querySelectorAll('.collapsible');
+        collapsibles.forEach(collapsible => {
+            collapsible.addEventListener('click', function() {
+                this.classList.toggle('active');
+                const content = this.nextElementSibling;
+                if (content.style.display === 'block') {
+                    content.style.display = 'none';
+                } else {
+                    content.style.display = 'block';
+                }
+            });
+        });
+
+        // Öffne den collapsible Bereich automatisch, wenn Fabi eingeloggt ist
+        function openCollapsible() {
+            const collapsible = document.querySelector('.collapsible');
+            if (collapsible && !collapsible.classList.contains('active')) {
+                collapsible.click();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setCurrentDate();
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
