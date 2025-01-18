@@ -274,7 +274,7 @@
               const userCredential = await signInWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
               loggedInUser = user.email;
-              canRemove = (user.email.toLowerCase() === 'fabi@example.com'); // Ersetzen Sie dies durch Fabis tatsächliche E-Mail
+              canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de'); // Ersetzen Sie dies durch Fabis tatsächliche E-Mail
               alert(`${user.email} ist eingeloggt.`);
               updateUIAfterLogin();
           } catch (error) {
