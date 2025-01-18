@@ -21,7 +21,8 @@
         query, 
         where, 
         arrayUnion, 
-        arrayRemove 
+        arrayRemove,
+        getDocs
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
       import { 
         getAuth, 
@@ -31,15 +32,15 @@
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
       
       // Ihre Firebase-Konfiguration (ersetzen Sie diese durch Ihre eigenen Daten)
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID",
-        measurementId: "YOUR_MEASUREMENT_ID"
-      };
+const firebaseConfig = {
+  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+  authDomain: "schichtplan-5c70f.firebaseapp.com",
+  projectId: "schichtplan-5c70f",
+  storageBucket: "schichtplan-5c70f.firebasestorage.app",
+  messagingSenderId: "502149312331",
+  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+  measurementId: "G-0DL0R5B7LV"
+};
     
       // Firebase initialisieren
       const app = initializeApp(firebaseConfig);
