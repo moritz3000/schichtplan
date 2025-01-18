@@ -2,10 +2,11 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <!-- Anpassung der viewport-Einstellungen zur Verhinderung des Zoomens -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Anpassung der viewport-Einstellungen für responsives Design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schichtplanung</title>
     
+    <!-- Firebase SDKs -->
     <script type="module">
       // Import Firebase SDKs
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
@@ -13,7 +14,6 @@
       import { 
         getFirestore, 
         collection, 
-        getDocs, 
         addDoc, 
         updateDoc, 
         deleteDoc, 
@@ -59,12 +59,6 @@
           currentDateElement.textContent = today.toLocaleDateString('de-DE', options);
       }
     
-      // Funktion zum Rendern aller Events im Container und in der Tabelle
-      function updateDisplay() {
-          // Firestore ist durch onSnapshot bereits für Echtzeit-Updates eingerichtet
-          // Diese Funktion muss daher nicht mehr etwas tun
-      }
-    
       // Rendern der Event-Container
       function renderEventContainer(savedData) {
           const eventContainer = document.getElementById('eventContainer');
@@ -76,6 +70,7 @@
               eventDiv.innerHTML = `
                   <p>${formatDate(event.datum)}</p>
                   <h3>Event: ${event.name}</h3>
+                  <p>Startzeit: ${formatTime(event.startzeit)} Uhr</p>
                   <button onclick="confirmForEvent('${event.id}')">Bestätigen</button>
                   ${canRemove ? `<button class="remove-event" onclick="removeEvent('${event.id}')" title="Event löschen">x</button>` : ''}
               `;
@@ -125,7 +120,7 @@
           });
       }
     
-      // Initial Load: Fetch all events und setze einen Echtzeit-Listener
+      // Initial Load: Setzt Echtzeit-Listener auf die 'events' Sammlung
       function initializeAppData() {
           const eventsCollection = collection(db, "events");
           onSnapshot(eventsCollection, (snapshot) => {
@@ -140,89 +135,10 @@
           });
       }
     
-      // Anmelden mit PIN
-      async function login() {
-          const pin = document.getElementById('passwordInput').value;
-          const selectedEmployee = document.getElementById('employeeSelect').value;
-    
-          if (!selectedEmployee) {
-              alert('Bitte wähle einen Mitarbeiter aus.');
-              return;
-          }
-    
-          if (selectedEmployee === 'Fabi' && pin === '123') {
-              loggedInUser = selectedEmployee;
-              canRemove = true;
-              alert('Fabi ist eingeloggt. Lösch- und Erstellungsfunktionen aktiviert.');
-              document.getElementById('eventForm').style.display = 'block';
-          } else if (pin === '1234') {
-              loggedInUser = selectedEmployee;
-              canRemove = false;
-              alert(`${selectedEmployee} ist eingeloggt.`);
-              document.getElementById('eventForm').style.display = 'none';
-          } else {
-              alert('Falscher PIN.');
-              return;
-          }
-    
-          // Aktualisiere den Header mit dem eingeloggten Benutzer
-          const welcomeUserElement = document.getElementById('welcomeUser');
-          welcomeUserElement.textContent = `Willkommen ${loggedInUser}!`;
-          welcomeUserElement.style.display = 'block';
-    
-          document.getElementById('passwordField').style.display = 'none';
-          // No need to updateDisplay, onSnapshot handles it
-      }
-    
-      function handleLoginChange() {
-          loggedInUser = null;
-          canRemove = false;
-          document.getElementById('passwordField').style.display = 'block';
-          document.getElementById('eventForm').style.display = 'none';
-    
-          // Entferne die Begrüßung aus dem Header
-          const welcomeUserElement = document.getElementById('welcomeUser');
-          welcomeUserElement.textContent = 'Willkommen!';
-          welcomeUserElement.style.display = 'none';
-      }
-    
-      // Bestätigen eines Events für den Benutzer
-      async function confirmForEvent(eventId) {
-          if (!loggedInUser) {
-              alert('Bitte logge dich zuerst ein.');
-              return;
-          }
-    
-          const eventDocRef = doc(db, "events", eventId);
-          try {
-              await updateDoc(eventDocRef, {
-                  mitarbeiter: arrayUnion(loggedInUser)
-              });
-          } catch (error) {
-              console.error("Fehler beim Bestätigen des Events: ", error);
-              alert('Es gab ein Problem beim Bestätigen des Events.');
-          }
-      }
-    
-      // Entfernen eines Namens aus einem Event
-      async function removeName(eventId, name) {
-          if (canRemove) {
-              const eventDocRef = doc(db, "events", eventId);
-              try {
-                  await updateDoc(eventDocRef, {
-                      mitarbeiter: arrayRemove(name)
-                  });
-              } catch (error) {
-                  console.error("Fehler beim Entfernen des Namens: ", error);
-                  alert('Es gab ein Problem beim Entfernen des Namens.');
-              }
-          }
-      }
-    
       // Hinzufügen eines neuen Events
       async function addEvent() {
           if (!canRemove) {
-              alert('Nur Fabi kann Events erstellen.');
+              alert('Nur Administratoren können Events erstellen.');
               return;
           }
     
@@ -281,7 +197,7 @@
       // Entfernen eines Events
       async function removeEvent(eventId) {
           if (!canRemove) {
-              alert('Nur Fabi kann Veranstaltungen löschen.');
+              alert('Nur Administratoren können Veranstaltungen löschen.');
               return;
           }
     
@@ -297,58 +213,116 @@
           }
       }
     
-      function toggleOtherEvent() {
-          const eventName = document.getElementById('eventName').value;
-          const otherEventContainer = document.getElementById('otherEventContainer');
-          if (eventName === 'sonstige') {
-              otherEventContainer.style.display = 'block';
-          } else {
-              otherEventContainer.style.display = 'none';
+      // Bestätigen eines Events für den Benutzer
+      async function confirmForEvent(eventId) {
+          if (!loggedInUser) {
+              alert('Bitte logge dich zuerst ein.');
+              return;
+          }
+    
+          const eventDocRef = doc(db, "events", eventId);
+          try {
+              await updateDoc(eventDocRef, {
+                  mitarbeiter: arrayUnion(loggedInUser)
+              });
+              alert('Du hast dich für dieses Event angemeldet.');
+          } catch (error) {
+              console.error("Fehler beim Bestätigen des Events: ", error);
+              alert('Es gab ein Problem beim Bestätigen des Events.');
           }
       }
     
-      function formatDate(dateStr) {
-          const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
-          const date = new Date(dateStr);
-          return date.toLocaleDateString('de-DE', options);
-      }
-    
-      function formatTime(timeStr) {
-          const [hours, minutes] = timeStr.split(':');
-          return `${hours}:${minutes}`;
-      }
-    
-      // Collapsible functionality (falls benötigt)
-      const collapsibles = document.querySelectorAll('.collapsible');
-      collapsibles.forEach(collapsible => {
-          collapsible.addEventListener('click', function() {
-              this.classList.toggle('active');
-              const content = this.nextElementSibling;
-              if (content.style.display === 'block') {
-                  content.style.display = 'none';
-              } else {
-                  content.style.display = 'block';
+      // Entfernen eines Namens aus einem Event
+      async function removeName(eventId, name) {
+          if (canRemove) {
+              const eventDocRef = doc(db, "events", eventId);
+              try {
+                  await updateDoc(eventDocRef, {
+                      mitarbeiter: arrayRemove(name)
+                  });
+                  alert('Name entfernt.');
+              } catch (error) {
+                  console.error("Fehler beim Entfernen des Namens: ", error);
+                  alert('Es gab ein Problem beim Entfernen des Namens.');
               }
-          });
-      });
-    
-      // Öffne den collapsible Bereich automatisch, wenn Fabi eingeloggt ist
-      function openCollapsible() {
-          const collapsible = document.querySelector('.collapsible');
-          if (collapsible && !collapsible.classList.contains('active')) {
-              collapsible.click();
           }
       }
     
-      // Initialisierung nach DOM geladen
-      document.addEventListener('DOMContentLoaded', () => {
-          setCurrentDate();
-          initializeAppData();
+      // Funktion zur Anmeldung mit E-Mail und Passwort
+      async function loginWithEmail() {
+          const email = document.getElementById('emailInput').value.trim();
+          const password = document.getElementById('passwordLogin').value;
+    
+          if (!email || !password) {
+              alert('Bitte E-Mail und Passwort eingeben.');
+              return;
+          }
+    
+          try {
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+              loggedInUser = user.email;
+              canRemove = (user.email.toLowerCase() === 'fabi@example.com'); // Ersetzen Sie dies durch Fabis tatsächliche E-Mail
+              alert(`${user.email} ist eingeloggt.`);
+              updateUIAfterLogin();
+          } catch (error) {
+              console.error('Fehler beim Einloggen:', error);
+              alert('Fehler beim Einloggen: ' + error.message);
+          }
+      }
+    
+      // Funktion zur Registrierung mit E-Mail und Passwort
+      async function registerWithEmail() {
+          const email = document.getElementById('emailRegister').value.trim();
+          const password = document.getElementById('passwordRegister').value;
+    
+          if (!email || !password) {
+              alert('Bitte E-Mail und Passwort eingeben.');
+              return;
+          }
+    
+          try {
+              const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+              alert('Registrierung erfolgreich. Bitte logge dich ein.');
+          } catch (error) {
+              console.error('Fehler bei der Registrierung:', error);
+              alert('Fehler bei der Registrierung: ' + error.message);
+          }
+      }
+    
+      // Überwacht den Authentifizierungsstatus
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              loggedInUser = user.email;
+              canRemove = (user.email.toLowerCase() === 'fabi@example.com'); // Ersetzen Sie dies durch Fabis tatsächliche E-Mail
+              updateUIAfterLogin();
+          } else {
+              loggedInUser = null;
+              canRemove = false;
+              updateUIAfterLogout();
+          }
       });
+    
+      // Aktualisiert die Benutzeroberfläche nach dem Login
+      function updateUIAfterLogin() {
+          document.getElementById('authSection').style.display = 'none';
+          document.getElementById('eventForm').style.display = canRemove ? 'block' : 'none';
+          document.getElementById('welcomeUser').textContent = `Willkommen ${loggedInUser}!`;
+          document.getElementById('welcomeUser').style.display = 'block';
+      }
+    
+      // Aktualisiert die Benutzeroberfläche nach dem Logout
+      function updateUIAfterLogout() {
+          document.getElementById('authSection').style.display = 'block';
+          document.getElementById('eventForm').style.display = 'none';
+          document.getElementById('welcomeUser').textContent = 'Willkommen!';
+          document.getElementById('welcomeUser').style.display = 'none';
+      }
     
       // Expose functions to the global scope for inline event handlers
-      window.login = login;
-      window.handleLoginChange = handleLoginChange;
+      window.loginWithEmail = loginWithEmail;
+      window.registerWithEmail = registerWithEmail;
       window.confirmForEvent = confirmForEvent;
       window.removeName = removeName;
       window.addEvent = addEvent;
@@ -356,6 +330,7 @@
       window.toggleOtherEvent = toggleOtherEvent;
     </script>
     
+    <!-- CSS für die Benutzeroberfläche -->
     <style>
         :root {
             --primary-color: #007bff;
@@ -415,7 +390,7 @@
 
         .container {
             padding: 20px;
-            max-width: 100%;
+            max-width: 800px;
             margin: auto;
         }
 
@@ -426,7 +401,7 @@
             font-size: 1em;
         }
 
-        select, input[type="tel"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
+        select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
             width: 100%;
             padding: 14px;
             margin-bottom: 18px;
@@ -689,30 +664,9 @@
     </header>
     <div class="container">
         <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
-        <div>
-            <label for="employeeSelect">Mitarbeiter auswählen:</label>
-            <select id="employeeSelect" onchange="handleLoginChange()">
-                <option value="">-- Wähle einen Namen --</option>
-                <option value="Moritz">Moritz</option>
-                <option value="Arnesa">Arnesa</option>
-                <option value="Fabi">Fabi</option>
-                <option value="Melissa">Melissa</option>
-                <option value="Gidde">Gidde</option>
-                <option value="Amer">Amer</option>
-                <option value="Gregor">Gregor</option>
-                <option value="Zeki">Zeki</option>
-            </select>
-            <div id="passwordField" style="display: none;">
-                <label for="passwordInput">PIN:</label>
-                <!-- Verwendung von input type="password" für verborgene Eingabe und numerische Eingabe -->
-                <input type="password" id="passwordInput" pattern="\d*" inputmode="numeric" placeholder="PIN eingeben" maxlength="6">
-                <button onclick="login()">Einloggen</button>
-            </div>
-            <hr>
-        </div>
-
+        
         <!-- Authentifizierungsbereich -->
-        <div id="authSection" style="display: none;">
+        <div id="authSection">
             <h3>Einloggen</h3>
             <label for="emailInput">E-Mail:</label>
             <input type="email" id="emailInput" placeholder="E-Mail eingeben">
@@ -728,7 +682,7 @@
             <button onclick="registerWithEmail()">Registrieren</button>
         </div>
 
-        <div class="content" id="eventForm">
+        <div class="content" id="eventForm" style="display: none;">
             <h3>Neues Event hinzufügen</h3>
             <label for="eventName">Event Name:</label>
             <select id="eventName" onchange="toggleOtherEvent()">
@@ -769,6 +723,7 @@
             <!-- Dynamisch hinzugefügte Events erscheinen hier als Container -->
         </div>
 
+        <!-- Verfügbarkeits-Tabelle -->
         <table>
             <thead>
                 <tr>
@@ -782,5 +737,10 @@
             </tbody>
         </table>
     </div>
+
+    <!-- JavaScript für UI Interaktionen und Firebase Operationen -->
+    <script>
+        // Funktionen sind bereits im Modul-Skript definiert und global verfügbar
+    </script>
 </body>
 </html>
