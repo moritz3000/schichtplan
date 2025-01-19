@@ -2,19 +2,28 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schichtplanung</title>
+    
+    <!-- CSS für die Benutzeroberfläche -->
     <style>
         :root {
             --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
             --danger-color: #dc3545;
-            --background-color: #f9f9f9;
+            --background-color: #f5f5f5;
             --white: #ffffff;
             --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --button-padding: 14px 20px;
+            --button-font-size: 1.1em;
+            --remove-button-size: 24px;
+            --small-remove-button-size: 18px;
+            --header-height: 60px;
+            --header-font-size: 1.4em;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
-            --button-padding: 12px 20px;
-            --button-font-size: 1em;
         }
 
         * {
@@ -28,289 +37,726 @@
             background-color: var(--background-color);
             color: #333;
             line-height: 1.6;
-            padding: 20px;
+            padding-bottom: 20px;
         }
 
         header {
             background-color: var(--primary-color);
             color: var(--white);
-            padding: 15px 20px;
+            padding: 0 20px;
+            height: var(--header-height);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-radius: var(--border-radius);
+            justify-content: space-between;
+            font-size: var(--header-font-size);
             box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .title {
-            font-size: 1.5em;
             font-weight: bold;
+        }
+
+        #welcomeUser {
+            font-size: 1em;
         }
 
         #logoutButton {
             background-color: var(--danger-color);
             color: var(--white);
             border: none;
-            border-radius: var(--border-radius);
-            padding: 10px 15px;
+            border-radius: 4px;
+            padding: 8px 16px;
             cursor: pointer;
             font-size: 1em;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            margin-left: 20px;
+        }
+
+        #logoutButton:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        #logoutButton:active {
+            transform: scale(1);
         }
 
         .container {
-            margin-top: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
         }
 
         label {
-            font-weight: bold;
-            margin-bottom: 5px;
             display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1em;
         }
 
-        input, select, button {
+        select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
             width: 100%;
-            padding: var(--button-padding);
-            margin-bottom: 15px;
+            padding: 14px;
+            margin-bottom: 18px;
             border: 1px solid #ccc;
             border-radius: var(--border-radius);
-            font-size: var(--button-font-size);
+            transition: border-color var(--transition-speed);
+            font-size: 1em;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
 
         button {
+            padding: var(--button-padding);
             background-color: var(--primary-color);
             color: var(--white);
             border: none;
+            border-radius: var(--border-radius);
             cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            font-size: var(--button-font-size);
+            width: 100%;
+            margin-bottom: 18px;
         }
 
         button:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .remove-event, .remove {
+            background-color: var(--danger-color);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            width: var(--remove-button-size);
+            height: var(--remove-button-size);
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+        }
+
+        .remove-event:hover, .remove:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
         }
 
         .event {
             background-color: var(--white);
             border: 1px solid #ddd;
             border-radius: var(--border-radius);
-            padding: 15px;
-            margin-bottom: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
             box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .event h3 {
+            font-size: 1.3em;
+            color: var(--primary-color);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .event p {
+            margin: 0;
+            font-size: 1em;
+        }
+
+        .remove-event {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: var(--remove-button-size);
+            height: var(--remove-button-size);
+            border-radius: 50%;
+            font-size: 1em;
+        }
+
+        .availability {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .name-item {
+            background-color: #e9ecef;
+            padding: 8px 14px;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.95em;
+            margin-bottom: 6px;
+        }
+
+        .name-item .remove {
+            padding: 0;
+            width: var(--small-remove-button-size);
+            height: var(--small-remove-button-size);
+            font-size: 0.85em;
+            border-radius: 50%;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 25px 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 25px;
+            overflow-x: auto;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
         }
 
         th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
+            padding: 14px;
             text-align: left;
+            font-size: 1em;
+            vertical-align: top;
         }
 
         th {
             background-color: #f2f2f2;
+            color: #333;
         }
 
-        #notification {
+        @media (max-width: 600px) {
+            .date-time {
+                flex-direction: column;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                height: auto;
+                padding: 15px;
+            }
+
+            .title {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+            }
+
+            #welcomeUser {
+                font-size: 0.95em;
+            }
+
+            .event {
+                padding: 16px;
+            }
+
+            .remove-event {
+                top: 16px;
+                right: 16px;
+                width: 20px;
+                height: 20px;
+                font-size: 0.9em;
+            }
+
+            button {
+                padding: 12px 18px;
+                font-size: 1em;
+            }
+
+            .name-item {
+                padding: 6px 10px;
+                font-size: 0.85em;
+            }
+
+            .remove {
+                width: 16px;
+                height: 16px;
+                font-size: 0.75em;
+            }
+        }
+
+        /* Zusätzliche Styles für das "Sonstige" Textfeld */
+        #otherEventContainer {
             display: none;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: var(--border-radius);
-            text-align: center;
-        }
-
-        #notification.success {
-            background-color: #28a745;
-            color: var(--white);
-        }
-
-        #notification.error {
-            background-color: var(--danger-color);
-            color: var(--white);
+            margin-bottom: 18px;
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="title">Schichtplanung</div>
+        <div class="title">G Schichtplanung</div>
+        <div id="welcomeUser" style="display: none;">Willkommen!</div>
         <button id="logoutButton" onclick="logout()" style="display: none;">Logout</button>
     </header>
+    <div class="container">
+        <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+        
+        <!-- Authentifizierungsbereich -->
+        <div id="authSection">
+            <h3>Einloggen</h3>
+            <label for="emailInput">E-Mail:</label>
+            <input type="email" id="emailInput" placeholder="E-Mail eingeben">
+            <label for="passwordLogin">Passwort:</label>
+            <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
+            <button onclick="loginWithEmail()">Einloggen</button>
+            <hr>
+            <h4>Oder registrieren</h4>
+            <label for="emailRegister">E-Mail:</label>
+            <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
+            <label for="passwordRegister">Passwort:</label>
+            <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
+            <button onclick="registerWithEmail()">Registrieren</button>
+        </div>
 
-    <div id="notification"></div>
+        <!-- Event-Formular (für Administratoren) -->
+        <div class="content" id="eventForm" style="display: none;">
+            <h3>Neues Event hinzufügen</h3>
+            <label for="eventName">Event Name:</label>
+            <select id="eventName" onchange="toggleOtherEvent()">
+                <option value="">-- Wähle ein Event --</option>
+                <option value="Bunkernacht">Bunkernacht</option>
+                <option value="Pferdreht">Pferdreht</option>
+                <option value="IDOLS">IDOLS</option>
+                <option value="Baracke">Baracke</option>
+                <option value="Crypt">Crypt</option>
+                <option value="Dancehall Station">Dancehall Station</option>
+                <option value="LOL">LOL</option>
+                <option value="sonstige">Sonstige</option>
+            </select>
 
-    <div class="container" id="authSection">
-        <h3>Einloggen</h3>
-        <label for="emailInput">E-Mail:</label>
-        <input type="email" id="emailInput" placeholder="E-Mail eingeben">
-        <label for="passwordInput">Passwort:</label>
-        <input type="password" id="passwordInput" placeholder="Passwort eingeben">
-        <button onclick="loginWithEmail()">Einloggen</button>
+            <div id="otherEventContainer">
+                <label for="otherEvent">Sonstiges Event:</label>
+                <input type="text" id="otherEvent" placeholder="Event Name eingeben">
+            </div>
 
-        <h3>Registrieren</h3>
-        <label for="emailRegister">E-Mail:</label>
-        <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
-        <label for="passwordRegister">Passwort:</label>
-        <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
-        <button onclick="registerWithEmail()">Registrieren</button>
+            <!-- Datum und Startzeit in einer Zeile -->
+            <div class="date-time" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="eventDate">Datum:</label>
+                    <input type="date" id="eventDate">
+                </div>
+                <div style="flex: 1;">
+                    <label for="eventTime">Startzeit:</label>
+                    <input type="time" id="eventTime">
+                </div>
+            </div>
+
+            <button onclick="addEvent()">Event hinzufügen</button>
+            <hr>
+        </div>
+
+        <!-- Container für Events -->
+        <div id="eventContainer">
+            <!-- Dynamisch hinzugefügte Events erscheinen hier als Container -->
+        </div>
+
+        <!-- Verfügbarkeits-Tabelle -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Name</th>
+                    <th>Verfügbare Mitarbeiter</th>
+                </tr>
+            </thead>
+            <tbody id="availabilityTable">
+                <!-- Dynamisch hinzugefügte Events erscheinen hier -->
+            </tbody>
+        </table>
     </div>
 
-    <div class="container" id="eventForm" style="display: none;">
-        <h3>Neues Event hinzufügen</h3>
-        <label for="eventName">Event Name:</label>
-        <input type="text" id="eventName" placeholder="Event Name">
-        <label for="eventDate">Datum:</label>
-        <input type="date" id="eventDate">
-        <label for="eventTime">Startzeit:</label>
-        <input type="time" id="eventTime">
-        <button onclick="addEvent()">Event hinzufügen</button>
-    </div>
-
-    <div id="eventContainer"></div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Datum</th>
-                <th>Name</th>
-                <th>Aktionen</th>
-            </tr>
-        </thead>
-        <tbody id="eventTable"></tbody>
-    </table>
-
+    <!-- JavaScript am Ende des Body laden -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-            authDomain: "schichtplan-5c70f.firebaseapp.com",
-            projectId: "schichtplan-5c70f",
-            storageBucket: "schichtplan-5c70f.appspot.com",
-            messagingSenderId: "502149312331",
-            appId: "1:502149312331:web:1dbce2d7fa034f25d702ce"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const showNotification = (message, type) => {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = type;
-            notification.style.display = 'block';
-            setTimeout(() => notification.style.display = 'none', 3000);
-        };
-
-        const updateUI = (user) => {
-            document.getElementById('authSection').style.display = user ? 'none' : 'block';
-            document.getElementById('logoutButton').style.display = user ? 'block' : 'none';
-            document.getElementById('eventForm').style.display = user ? 'block' : 'none';
-        };
-
-        const renderEvents = (events) => {
-            const eventContainer = document.getElementById('eventContainer');
-            const eventTable = document.getElementById('eventTable');
-            eventContainer.innerHTML = '';
-            eventTable.innerHTML = '';
-
-            events.forEach(event => {
-                const row = document.createElement('tr');
-
-                row.innerHTML = `
-                    <td>${event.date}</td>
-                    <td>${event.name}</td>
-                    <td>
-                        <button onclick="deleteEvent('${event.id}')">Löschen</button>
-                    </td>
-                `;
-
-                eventTable.appendChild(row);
-            });
-        };
-
-        const loadEvents = () => {
-            const eventsRef = collection(db, 'events');
-            onSnapshot(eventsRef, (snapshot) => {
-                const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderEvents(events);
-            });
-        };
-
-        const addEvent = async () => {
-            const name = document.getElementById('eventName').value;
-            const date = document.getElementById('eventDate').value;
-            const time = document.getElementById('eventTime').value;
-
-            if (!name || !date || !time) {
-                showNotification('Bitte alle Felder ausfüllen.', 'error');
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, 'events'), { name, date, time });
-                showNotification('Event erfolgreich hinzugefügt.', 'success');
-            } catch (error) {
-                showNotification('Fehler beim Hinzufügen des Events.', 'error');
-            }
-        };
-
-        const deleteEvent = async (id) => {
-            try {
-                await deleteDoc(doc(db, 'events', id));
-                showNotification('Event gelöscht.', 'success');
-            } catch (error) {
-                showNotification('Fehler beim Löschen des Events.', 'error');
-            }
-        };
-
-        const loginWithEmail = async () => {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                updateUI(userCredential.user);
-            } catch (error) {
-                showNotification('Fehler beim Einloggen.', 'error');
-            }
-        };
-
-        const registerWithEmail = async () => {
-            const email = document.getElementById('emailRegister').value;
-            const password = document.getElementById('passwordRegister').value;
-
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                showNotification('Registrierung erfolgreich.', 'success');
-            } catch (error) {
-                showNotification('Fehler bei der Registrierung.', 'error');
-            }
-        };
-
-        const logout = async () => {
-            try {
-                await signOut(auth);
-                updateUI(null);
-                showNotification('Erfolgreich ausgeloggt.', 'success');
-            } catch (error) {
-                showNotification('Fehler beim Ausloggen.', 'error');
-            }
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            updateUI(user);
-            if (user) loadEvents();
-        });
-
-        window.loginWithEmail = loginWithEmail;
-        window.registerWithEmail = registerWithEmail;
-        window.addEvent = addEvent;
-        window.deleteEvent = deleteEvent;
-        window.logout = logout;
+      // Import Firebase SDKs
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+      import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        updateDoc, 
+        deleteDoc, 
+        doc, 
+        onSnapshot, 
+        query, 
+        where, 
+        arrayUnion, 
+        arrayRemove,
+        getDocs
+      } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+      import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword, 
+        onAuthStateChanged 
+      } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+      
+      // Ihre Firebase-Konfiguration (ersetzen Sie diese durch Ihre eigenen Daten)
+const firebaseConfig = {
+  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+  authDomain: "schichtplan-5c70f.firebaseapp.com",
+  projectId: "schichtplan-5c70f",
+  storageBucket: "schichtplan-5c70f.firebasestorage.app",
+  messagingSenderId: "502149312331",
+  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+  measurementId: "G-0DL0R5B7LV"
+}
+    
+      // Firebase initialisieren
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      
+      let loggedInUser = null;
+      let canRemove = false;
+    
+      // Setze das aktuelle Datum im Header
+      function setCurrentDate() {
+          const currentDateElement = document.getElementById('currentDate');
+          const today = new Date();
+          const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
+          currentDateElement.textContent = today.toLocaleDateString('de-DE', options);
+      }
+    
+      // Formatieren von Datum
+      function formatDate(dateStr) {
+          const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('de-DE', options);
+      }
+    
+      // Formatieren von Zeit
+      function formatTime(timeStr) {
+          return timeStr; // Hier können Sie Anpassungen vornehmen, falls nötig
+      }
+    
+      // Rendern der Event-Container
+      function renderEventContainer(savedData) {
+          const eventContainer = document.getElementById('eventContainer');
+          eventContainer.innerHTML = ''; // Container leeren
+    
+          savedData.forEach((event) => {
+              const eventDiv = document.createElement('div');
+              eventDiv.className = 'event';
+              eventDiv.innerHTML = `
+                  <p>${formatDate(event.datum)}</p>
+                  <h3>Event: ${event.name}</h3>
+                  <p>Startzeit: ${formatTime(event.startzeit)} Uhr</p>
+                  <button onclick="confirmForEvent('${event.id}')">Bestätigen</button>
+                  ${canRemove ? `<button class="remove-event" onclick="removeEvent('${event.id}')" title="Event löschen">x</button>` : ''}
+              `;
+              eventContainer.appendChild(eventDiv);
+          });
+      }
+    
+      // Rendern der Verfügbarkeits-Tabelle
+      function renderAvailabilityTable(savedData) {
+          const tableBody = document.getElementById('availabilityTable');
+          tableBody.innerHTML = ''; // Tabelle leeren
+    
+          savedData.forEach((event) => {
+              const row = document.createElement('tr');
+    
+              // Datum
+              const datumCell = document.createElement('td');
+              datumCell.textContent = formatDate(event.datum);
+              row.appendChild(datumCell);
+    
+              // Name
+              const nameCell = document.createElement('td');
+              nameCell.textContent = event.name;
+              row.appendChild(nameCell);
+    
+              // Verfügbare Mitarbeiter
+              const mitarbeiterCell = document.createElement('td');
+              event.mitarbeiter.forEach((name) => {
+                  const nameSpan = document.createElement('span');
+                  nameSpan.className = 'name-item';
+                  nameSpan.textContent = name;
+    
+                  if (canRemove) {
+                      const removeBtn = document.createElement('button');
+                      removeBtn.className = 'remove';
+                      removeBtn.textContent = 'x';
+                      removeBtn.title = 'Name entfernen';
+                      removeBtn.onclick = () => removeName(event.id, name);
+                      nameSpan.appendChild(removeBtn);
+                  }
+    
+                  mitarbeiterCell.appendChild(nameSpan);
+              });
+              row.appendChild(mitarbeiterCell);
+    
+              tableBody.appendChild(row);
+          });
+      }
+    
+      // Initial Load: Setzt Echtzeit-Listener auf die 'events' Sammlung
+      function initializeAppData() {
+          const eventsCollection = collection(db, "events");
+          onSnapshot(eventsCollection, (snapshot) => {
+              const savedData = [];
+              snapshot.forEach((doc) => {
+                  savedData.push({ id: doc.id, ...doc.data() });
+              });
+              renderEventContainer(savedData);
+              renderAvailabilityTable(savedData);
+          }, (error) => {
+              console.error("Fehler beim Abrufen der Events: ", error);
+          });
+      }
+    
+      // Hinzufügen eines neuen Events
+      async function addEvent() {
+          if (!canRemove) {
+              alert('Nur Administratoren können Events erstellen.');
+              return;
+          }
+    
+          let eventName = document.getElementById('eventName').value.trim();
+          const isOther = eventName === 'sonstige';
+          if (isOther) {
+              const otherEvent = document.getElementById('otherEvent').value.trim();
+              if (!otherEvent) {
+                  alert('Bitte gib den Namen des sonstigen Events ein.');
+                  return;
+              }
+              eventName = otherEvent;
+          }
+    
+          const eventDate = document.getElementById('eventDate').value;
+          const eventTime = document.getElementById('eventTime').value;
+    
+          if (!eventName || !eventDate || !eventTime) {
+              alert('Bitte alle Felder ausfüllen.');
+              return;
+          }
+    
+          try {
+              // Überprüfen, ob das Event bereits existiert
+              const q = query(collection(db, "events"),
+                  where("datum", "==", eventDate),
+                  where("name", "==", eventName),
+                  where("startzeit", "==", eventTime)
+              );
+              const querySnapshot = await getDocs(q);
+    
+              if (!querySnapshot.empty) {
+                  alert('Dieses Event existiert bereits.');
+                  return;
+              }
+    
+              // Neues Event hinzufügen
+              await addDoc(collection(db, "events"), {
+                  datum: eventDate,
+                  name: eventName,
+                  startzeit: eventTime,
+                  mitarbeiter: []
+              });
+    
+              alert('Event hinzugefügt.');
+              // Reset Form
+              document.getElementById('eventForm').reset();
+              document.getElementById('otherEventContainer').style.display = 'none';
+              // No need to updateDisplay, onSnapshot handles it
+          } catch (error) {
+              console.error('Fehler beim Hinzufügen des Events: ', error);
+              alert('Es gab ein Problem beim Hinzufügen des Events: ' + error.message);
+          }
+      }
+    
+      // Entfernen eines Events
+      async function removeEvent(eventId) {
+          if (!canRemove) {
+              alert('Nur Administratoren können Veranstaltungen löschen.');
+              return;
+          }
+    
+          if (confirm('Bist du sicher, dass du dieses Event löschen möchtest?')) {
+              const eventDocRef = doc(db, "events", eventId);
+              try {
+                  await deleteDoc(eventDocRef);
+                  alert('Event gelöscht.');
+              } catch (error) {
+                  console.error('Fehler beim Löschen des Events: ', error);
+                  alert('Es gab ein Problem beim Löschen des Events: ' + error.message);
+              }
+          }
+      }
+    
+      // Bestätigen eines Events für den Benutzer
+      async function confirmForEvent(eventId) {
+          if (!loggedInUser) {
+              alert('Bitte logge dich zuerst ein.');
+              return;
+          }
+    
+          const eventDocRef = doc(db, "events", eventId);
+          try {
+              await updateDoc(eventDocRef, {
+                  mitarbeiter: arrayUnion(loggedInUser)
+              });
+              alert('Du hast dich für dieses Event angemeldet.');
+          } catch (error) {
+              console.error("Fehler beim Bestätigen des Events: ", error);
+              alert('Es gab ein Problem beim Bestätigen des Events: ' + error.message);
+          }
+      }
+    
+      // Entfernen eines Namens aus einem Event
+      async function removeName(eventId, name) {
+          if (canRemove) {
+              const eventDocRef = doc(db, "events", eventId);
+              try {
+                  await updateDoc(eventDocRef, {
+                      mitarbeiter: arrayRemove(name)
+                  });
+                  alert('Name entfernt.');
+              } catch (error) {
+                  console.error("Fehler beim Entfernen des Namens: ", error);
+                  alert('Es gab ein Problem beim Entfernen des Namens: ' + error.message);
+              }
+          }
+      }
+    
+      // Funktion zum Abmelden
+      async function logout() {
+          try {
+              await auth.signOut();
+              alert('Du wurdest erfolgreich ausgeloggt.');
+          } catch (error) {
+              console.error('Fehler beim Ausloggen:', error);
+              alert('Es gab ein Problem beim Ausloggen: ' + error.message);
+          }
+      }
+    
+      // Funktion zur Anmeldung mit E-Mail und Passwort
+      async function loginWithEmail() {
+          const email = document.getElementById('emailInput').value.trim();
+          const password = document.getElementById('passwordLogin').value;
+    
+          if (!email || !password) {
+              alert('Bitte E-Mail und Passwort eingeben.');
+              return;
+          }
+    
+          try {
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+              loggedInUser = user.email;
+              canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de'); // Aktualisiert auf Fabis E-Mail
+              console.log(`User eingeloggt: ${loggedInUser}, canRemove: ${canRemove}`);
+              alert(`${user.email} ist eingeloggt.`);
+              updateUIAfterLogin();
+          } catch (error) {
+              console.error('Fehler beim Einloggen:', error);
+              alert('Fehler beim Einloggen: ' + error.message);
+          }
+      }
+    
+      // Funktion zur Registrierung mit E-Mail und Passwort
+      async function registerWithEmail() {
+          const email = document.getElementById('emailRegister').value.trim();
+          const password = document.getElementById('passwordRegister').value;
+    
+          if (!email || !password) {
+              alert('Bitte E-Mail und Passwort eingeben.');
+              return;
+          }
+    
+          try {
+              const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+              alert('Registrierung erfolgreich. Bitte logge dich ein.');
+          } catch (error) {
+              console.error('Fehler bei der Registrierung:', error);
+              alert('Fehler bei der Registrierung: ' + error.message);
+          }
+      }
+    
+      // Überwacht den Authentifizierungsstatus
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              loggedInUser = user.email;
+              canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de'); // Aktualisiert auf Fabis E-Mail
+              console.log(`Auth State Changed: User = ${loggedInUser}, canRemove = ${canRemove}`);
+              updateUIAfterLogin();
+          } else {
+              loggedInUser = null;
+              canRemove = false;
+              updateUIAfterLogout();
+          }
+      });
+    
+      // Aktualisiert die Benutzeroberfläche nach dem Login
+      function updateUIAfterLogin() {
+          document.getElementById('authSection').style.display = 'none';
+          document.getElementById('eventForm').style.display = canRemove ? 'block' : 'none';
+          document.getElementById('welcomeUser').textContent = `Willkommen ${loggedInUser}!`;
+          document.getElementById('welcomeUser').style.display = 'block';
+          document.getElementById('logoutButton').style.display = 'inline-block'; // Logout-Button anzeigen
+      }
+    
+      // Aktualisiert die Benutzeroberfläche nach dem Logout
+      function updateUIAfterLogout() {
+          document.getElementById('authSection').style.display = 'block';
+          document.getElementById('eventForm').style.display = 'none';
+          document.getElementById('welcomeUser').textContent = 'Willkommen!';
+          document.getElementById('welcomeUser').style.display = 'none';
+          document.getElementById('logoutButton').style.display = 'none'; // Logout-Button verstecken
+      }
+    
+      // Funktion zum Umschalten des "Sonstige" Event-Feldes
+      function toggleOtherEvent() {
+          const eventName = document.getElementById('eventName').value;
+          const otherEventContainer = document.getElementById('otherEventContainer');
+          if (eventName === 'sonstige') {
+              otherEventContainer.style.display = 'block';
+          } else {
+              otherEventContainer.style.display = 'none';
+          }
+      }
+    
+      // Setze das aktuelle Datum und initialisiere die App-Daten
+      document.addEventListener('DOMContentLoaded', () => {
+          setCurrentDate();
+          initializeAppData();
+          console.log('Skript erfolgreich geladen und initialisiert.');
+      });
+    
+      // Expose functions to the global scope for inline event handlers
+      window.loginWithEmail = loginWithEmail;
+      window.registerWithEmail = registerWithEmail;
+      window.confirmForEvent = confirmForEvent;
+      window.removeName = removeName;
+      window.addEvent = addEvent;
+      window.removeEvent = removeEvent;
+      window.toggleOtherEvent = toggleOtherEvent;
+      window.logout = logout; // Hinzugefügt für den Logout-Button
     </script>
 </body>
 </html>
