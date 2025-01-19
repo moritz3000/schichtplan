@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <!-- Mobilgeräte: kein Zoomen, Vollbild, etc. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
-    
+    <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Manifest für PWA (Vollbild-Start) -->
+    <link rel="manifest" href="manifest.json" />
+
     <title>G Schichtplanung</title>
 
     <style>
@@ -235,7 +237,7 @@
 
         /* Admin-Bereich für Tabelle */
         #adminSection {
-            display: none; /* Standard: unsichtbar (nur Admin darf sie sehen) */
+            display: none; /* Standard: unsichtbar, nur Admin sieht das */
             margin-top: 40px;
         }
 
@@ -365,13 +367,15 @@
             <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
 
             <div style="margin-bottom: 16px;">
-                <input type="checkbox" id="staySignedIn">
-                <label for="staySignedIn" style="display: inline; font-weight: normal;">Angemeldet bleiben</label>
+                <input type="checkbox" id="staySignedIn" />
+                <label for="staySignedIn" style="display: inline; font-weight: normal;">
+                    Angemeldet bleiben
+                </label>
             </div>
 
             <button id="loginButton">Einloggen</button>
             
-            <hr>
+            <hr />
             <h4>Oder registrieren</h4>
 
             <label for="usernameRegister">Benutzername:</label>
@@ -383,6 +387,8 @@
             <label for="passwordRegister">Passwort:</label>
             <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
 
+            <!-- Hier ist wichtig, dass die id="registerButton" existiert, 
+                 und wir im Skript unten einen Event-Listener darauf setzen. -->
             <button id="registerButton">Registrieren</button>
         </div>
 
@@ -445,9 +451,9 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <!-- JavaScript (ES Module) -->
     <script type="module">
-      // Import Firebase SDKs
+      // ========== Firebase-Importe ==========
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
       import { 
@@ -474,19 +480,19 @@
         browserLocalPersistence,
         browserSessionPersistence
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
-      
-      // Firebase-Konfiguration
+
+      // ========== Deine Firebase-Konfiguration (Platzhalter ersetzen!) ==========
       const firebaseConfig = {
         apiKey: "DEINE_API_KEY",
         authDomain: "DEINE_AUTH_DOMAIN",
         projectId: "DEIN_PROJECT_ID",
         storageBucket: "DEIN_STORAGE_BUCKET",
-        messagingSenderId: "DEINE_MESSAGING_SENDER_ID",
+        messagingSenderId: "DEINE_SENDER_ID",
         appId: "DEINE_APP_ID",
         measurementId: "DEINE_MEASUREMENT_ID"
       };
-    
-      // Firebase initialisieren
+
+      // ========== Firebase initialisieren ==========
       const app = initializeApp(firebaseConfig);
       const analytics = getAnalytics(app);
       const db = getFirestore(app);
@@ -494,17 +500,17 @@
       
       let loggedInUser = null;
       let canRemove = false; // Admin-Rechte
-      let allEvents = [];    // Speicherung aller Events für CSV-Export etc.
+      let allEvents = [];    // Wird für CSV-Export genutzt
 
-      // Setze heutiges Datum
+      // ======== Anzeige: heutiges Datum im Header ========
       function setCurrentDate() {
           const currentDateElement = document.getElementById('currentDate');
           const today = new Date();
           const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
           currentDateElement.textContent = today.toLocaleDateString('de-DE', options);
       }
-    
-      // Formatieren Datum
+
+      // ======== Hilfsfunktionen: Datum/Zeit formatieren ========
       function formatDate(dateStr) {
           if (!dateStr) return '';
           const date = new Date(dateStr);
@@ -512,29 +518,27 @@
           return date.toLocaleDateString('de-DE', options);
       }
     
-      // Formatieren Zeit
       function formatTime(timeStr) {
           if (!timeStr) return '';
-          // Kann beliebig formatiert werden, hier einfach "HH:MM"
-          return timeStr;
+          return timeStr; // z.B. "HH:MM"
       }
-    
-      // Benachrichtigung anzeigen
+
+      // ======== Benachrichtigungen anzeigen ========
       function showNotification(message, type = 'success') {
           const notificationContainer = document.getElementById('notification');
           const notification = document.createElement('div');
           notification.className = 'notification-message';
-          
+
           if (type === 'error') {
               notification.classList.add('notification-error');
           } else if (type === 'info') {
               notification.classList.add('notification-info');
           }
-          
+
           notification.textContent = message;
           notificationContainer.appendChild(notification);
-          
-          // Automatisch nach 3s ausblenden
+
+          // Automatisches Entfernen nach 3 Sekunden
           setTimeout(() => {
               notification.style.opacity = '0';
               setTimeout(() => {
@@ -542,13 +546,13 @@
               }, 500);
           }, 3000);
       }
-    
-      // Render-Logik für Events (Event-Container)
+
+      // ========== Events-Container anzeigen ==========
       function renderEventContainer(savedData) {
           const eventContainer = document.getElementById('eventContainer');
-          eventContainer.innerHTML = ''; // Container leeren
+          eventContainer.innerHTML = '';
 
-          // Wir speichern uns auch alle Events global, damit wir für CSV exportieren können
+          // Speichern für CSV-Export
           allEvents = savedData;
 
           savedData.forEach((event) => {
@@ -558,6 +562,7 @@
               const dateStr = formatDate(event.datum);
               const timeStr = formatTime(event.startzeit);
 
+              // Grundstruktur
               eventDiv.innerHTML = `
                   <p><strong>${dateStr}</strong> • Startzeit: ${timeStr} Uhr</p>
                   <h3>${event.name}</h3>
@@ -568,7 +573,7 @@
                   }
               `;
 
-              // Teilnehmer-Liste direkt unter dem Event
+              // Teilnehmer-Liste
               const availabilityDiv = document.createElement('div');
               availabilityDiv.className = 'availability';
 
@@ -577,8 +582,8 @@
                   nameSpan.className = 'name-item';
                   nameSpan.textContent = name;
 
-                  // Name entfernen nur, wenn Admin
                   if (canRemove) {
+                      // Admin kann Namen entfernen
                       const removeBtn = document.createElement('button');
                       removeBtn.className = 'remove';
                       removeBtn.textContent = 'x';
@@ -592,7 +597,7 @@
 
               eventDiv.appendChild(availabilityDiv);
 
-              // Button zum Bestätigen für einen normalen User
+              // "Bestätigen" Button für eingeloggt
               const confirmBtn = document.createElement('button');
               confirmBtn.textContent = 'Bestätigen';
               confirmBtn.onclick = () => confirmForEvent(event.id);
@@ -602,29 +607,29 @@
           });
       }
 
-      // Admin-Tabelle rendern (nur wenn Admin)
+      // ========== Admin-Tabelle anzeigen ==========
       function renderAvailabilityTable(savedData) {
           const tableBody = document.getElementById('availabilityTable');
-          tableBody.innerHTML = ''; // Tabelle leeren
-    
+          tableBody.innerHTML = '';
+
           savedData.forEach((event) => {
               const row = document.createElement('tr');
-    
-              // Datum
+
+              // Spalte: Datum
               const datumCell = document.createElement('td');
               datumCell.textContent = formatDate(event.datum);
               row.appendChild(datumCell);
 
-              // Event Name
+              // Spalte: Event-Name
               const nameCell = document.createElement('td');
               nameCell.textContent = event.name;
               row.appendChild(nameCell);
 
-              // Mit­arbeiter
+              // Spalte: Mitarbeiter
               const mitarbeiterCell = document.createElement('td');
               (event.mitarbeiter || []).forEach((name) => {
                   const nameSpan = document.createElement('span');
-                  nameSpan.textContent = name + ' | ';
+                  nameSpan.textContent = name + '  |  ';
                   mitarbeiterCell.appendChild(nameSpan);
               });
               row.appendChild(mitarbeiterCell);
@@ -632,27 +637,23 @@
               tableBody.appendChild(row);
           });
       }
-    
-      // CSV-Export-Funktion
+
+      // ========== CSV-Export ==========
       function exportCSV() {
           if (!canRemove) {
-              showNotification('Nur Administratoren können einen CSV-Export durchführen.', 'error');
+              showNotification('Nur Admin kann einen CSV-Export durchführen.', 'error');
               return;
           }
           if (!allEvents.length) {
-              showNotification('Es gibt keine Daten zum Exportieren.', 'info');
+              showNotification('Keine Daten zum Exportieren.', 'info');
               return;
           }
 
-          // CSV-Header
           let csvContent = "Datum;Event;Mitarbeiter\n";
-
           allEvents.forEach(event => {
               const dateStr = formatDate(event.datum);
               const nameStr = event.name;
               const mitarbeiterStr = (event.mitarbeiter || []).join(", ");
-
-              // CSV-Zeile
               csvContent += `${dateStr};${nameStr};${mitarbeiterStr}\n`;
           });
 
@@ -667,7 +668,7 @@
           document.body.removeChild(downloadLink);
       }
 
-      // Echtzeit-Listener auf die 'events' Sammlung
+      // ========== Realtime-Listener auf 'events' ==========
       function initializeAppData() {
           const eventsCollection = collection(db, "events");
           onSnapshot(eventsCollection, (snapshot) => {
@@ -675,11 +676,11 @@
               snapshot.forEach((docData) => {
                   savedData.push({ id: docData.id, ...docData.data() });
               });
-              // Darstellen
+
               renderEventContainer(savedData);
 
-              // Wenn Admin: Tabelle anzeigen
               if (canRemove) {
+                  // Admin sieht Tabelle
                   document.getElementById('adminSection').style.display = 'block';
                   renderAvailabilityTable(savedData);
               } else {
@@ -690,14 +691,14 @@
               showNotification("Fehler beim Abrufen der Events.", "error");
           });
       }
-    
-      // Neues Event hinzufügen
+
+      // ========== Neues Event anlegen ==========
       async function addEvent() {
           if (!canRemove) {
-              showNotification('Nur Administratoren können Events erstellen.', 'error');
+              showNotification('Nur Admin kann Events anlegen.', 'error');
               return;
           }
-    
+
           let eventName = document.getElementById('eventName').value.trim();
           if (!eventName) {
               showNotification('Bitte einen Event-Namen wählen oder eingeben.', 'error');
@@ -712,15 +713,14 @@
               }
               eventName = otherEvent;
           }
-    
+
           const eventDate = document.getElementById('eventDate').value;
           const eventTime = document.getElementById('eventTime').value;
-    
-          if (!eventName || !eventDate || !eventTime) {
-              showNotification('Bitte alle Felder ausfüllen.', 'error');
+          if (!eventDate || !eventTime) {
+              showNotification('Bitte Datum und Uhrzeit eingeben.', 'error');
               return;
           }
-    
+
           try {
               // Prüfen, ob Event bereits existiert
               const q = query(collection(db, "events"),
@@ -729,69 +729,68 @@
                   where("startzeit", "==", eventTime)
               );
               const querySnapshot = await getDocs(q);
-    
+
               if (!querySnapshot.empty) {
                   showNotification('Dieses Event existiert bereits.', 'error');
                   return;
               }
-    
-              // Neues Event in DB
+
+              // Hinzufügen
               await addDoc(collection(db, "events"), {
                   datum: eventDate,
                   name: eventName,
                   startzeit: eventTime,
                   mitarbeiter: []
               });
-    
               showNotification('Event hinzugefügt.');
-              // Formular zurücksetzen
+
+              // Formular reset
               document.getElementById('eventForm').reset();
               document.getElementById('otherEventContainer').style.display = 'none';
           } catch (error) {
-              console.error('Fehler beim Hinzufügen des Events: ', error);
-              showNotification('Problem beim Hinzufügen des Events: ' + error.message, 'error');
+              console.error('Fehler beim Hinzufügen: ', error);
+              showNotification('Problem beim Hinzufügen: ' + error.message, 'error');
           }
       }
-    
-      // Event entfernen
+
+      // ========== Event löschen ==========
       async function removeEvent(eventId) {
           if (!canRemove) {
-              showNotification('Nur Administratoren können Events löschen.', 'error');
+              showNotification('Nur Admin kann Events löschen.', 'error');
               return;
           }
-    
+
           if (confirm('Möchtest du dieses Event wirklich löschen?')) {
               const eventDocRef = doc(db, "events", eventId);
               try {
                   await deleteDoc(eventDocRef);
                   showNotification('Event gelöscht.');
               } catch (error) {
-                  console.error('Fehler beim Löschen des Events: ', error);
-                  showNotification('Problem beim Löschen des Events: ' + error.message, 'error');
+                  console.error('Fehler beim Löschen: ', error);
+                  showNotification('Problem beim Löschen: ' + error.message, 'error');
               }
           }
       }
-    
-      // Sich zu einem Event hinzufügen
+
+      // ========== Nutzer meldet sich für Event an ==========
       async function confirmForEvent(eventId) {
           if (!loggedInUser) {
-              showNotification('Bitte logge dich zuerst ein.', 'error');
+              showNotification('Bitte zuerst einloggen.', 'error');
               return;
           }
           const eventDocRef = doc(db, "events", eventId);
           try {
-              // loggedInUser = z.B. "Max Mustermann" oder "test@example.com"
               await updateDoc(eventDocRef, {
                   mitarbeiter: arrayUnion(loggedInUser)
               });
-              showNotification('Du hast dich für dieses Event angemeldet.');
+              showNotification('Du hast dich angemeldet.');
           } catch (error) {
-              console.error("Fehler beim Bestätigen des Events: ", error);
+              console.error('Fehler beim Bestätigen:', error);
               showNotification('Problem beim Bestätigen: ' + error.message, 'error');
           }
       }
-    
-      // Namen wieder entfernen
+
+      // ========== Name aus Event entfernen ==========
       async function removeName(eventId, name) {
           if (!canRemove) return;
           const eventDocRef = doc(db, "events", eventId);
@@ -801,16 +800,146 @@
               });
               showNotification('Name entfernt.');
           } catch (error) {
-              console.error("Fehler beim Entfernen des Namens: ", error);
-              showNotification('Problem beim Entfernen des Namens: ' + error.message, 'error');
+              console.error('Fehler beim Entfernen:', error);
+              showNotification('Problem beim Entfernen: ' + error.message, 'error');
           }
       }
-    
-      // Logout
+
+      // ========== Logout ==========
       async function logout() {
           try {
               await auth.signOut();
               showNotification('Erfolgreich ausgeloggt.', 'info');
           } catch (error) {
               console.error('Fehler beim Ausloggen:', error);
-              showNotification('Problem beim Ausloggen: ' + error.message, 'err
+              showNotification('Problem beim Ausloggen: ' + error.message, 'error');
+          }
+      }
+
+      // ========== Login ==========
+      async function loginWithEmail() {
+          const email = document.getElementById('emailInput').value.trim();
+          const password = document.getElementById('passwordLogin').value;
+          const staySignedIn = document.getElementById('staySignedIn').checked;
+
+          if (!email || !password) {
+              showNotification('Bitte E-Mail und Passwort eingeben.', 'error');
+              return;
+          }
+
+          // Persistenz wählen
+          const persistenceType = staySignedIn ? browserLocalPersistence : browserSessionPersistence;
+          try {
+              await setPersistence(auth, persistenceType);
+
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+
+              // Admin-Check (Beispiel: E-Mail-Vergleich)
+              canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
+
+              // Wenn displayName nicht gesetzt, fallback auf E-Mail
+              loggedInUser = user.displayName || user.email;
+              showNotification(`${loggedInUser} ist eingeloggt.`, 'success');
+              updateUIAfterLogin();
+          } catch (error) {
+              console.error('Fehler beim Einloggen:', error);
+              showNotification('Fehler beim Einloggen: ' + error.message, 'error');
+          }
+      }
+
+      // ========== Registrierung ==========
+      async function registerWithEmail() {
+          // Hier wird die Funktion aufgerufen, wenn man auf den "Registrieren"-Button klickt.
+          const username = document.getElementById('usernameRegister').value.trim();
+          const email = document.getElementById('emailRegister').value.trim();
+          const password = document.getElementById('passwordRegister').value;
+
+          if (!username || !email || !password) {
+              showNotification('Bitte Benutzername, E-Mail und Passwort eingeben.', 'error');
+              return;
+          }
+
+          try {
+              const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+
+              // displayName setzen
+              await updateProfile(user, { displayName: username });
+              showNotification('Registrierung erfolgreich. Bitte logge dich jetzt ein.', 'success');
+          } catch (error) {
+              console.error('Fehler bei der Registrierung:', error);
+              showNotification('Fehler bei der Registrierung: ' + error.message, 'error');
+          }
+      }
+
+      // ========== Auth-State-Listener ==========
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              loggedInUser = user.displayName || user.email;
+              // Admin-Check
+              canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
+              updateUIAfterLogin();
+          } else {
+              loggedInUser = null;
+              canRemove = false;
+              updateUIAfterLogout();
+          }
+      });
+
+      // ========== UI anpassen nach Login/Logout ==========
+      function updateUIAfterLogin() {
+          document.getElementById('authSection').style.display = 'none';
+          document.getElementById('eventForm').style.display = canRemove ? 'block' : 'none';
+
+          const userLabel = document.getElementById('welcomeUser');
+          userLabel.textContent = `Willkommen, ${loggedInUser}!`;
+          userLabel.style.display = 'block';
+
+          document.getElementById('logoutButton').style.display = 'inline-block';
+          
+          // Admin-Bereich sichtbar oder nicht
+          document.getElementById('adminSection').style.display = canRemove ? 'block' : 'none';
+      }
+
+      function updateUIAfterLogout() {
+          document.getElementById('authSection').style.display = 'block';
+          document.getElementById('eventForm').style.display = 'none';
+
+          document.getElementById('welcomeUser').textContent = 'Willkommen!';
+          document.getElementById('welcomeUser').style.display = 'none';
+
+          document.getElementById('logoutButton').style.display = 'none';
+          document.getElementById('adminSection').style.display = 'none';
+      }
+
+      // ========== Sonstiges Event ein-/ausblenden ==========
+      function toggleOtherEvent() {
+          const eventName = document.getElementById('eventName').value;
+          const otherEventContainer = document.getElementById('otherEventContainer');
+          otherEventContainer.style.display = (eventName === 'sonstige') ? 'block' : 'none';
+      }
+
+      // ========== DOM-Start: init App ==========
+      document.addEventListener('DOMContentLoaded', () => {
+          setCurrentDate();
+          initializeAppData();
+
+          // Wichtig: Klick-Handler für Registrierung & Login
+          document.getElementById('loginButton').addEventListener('click', loginWithEmail);
+          document.getElementById('registerButton').addEventListener('click', registerWithEmail);
+          document.getElementById('logoutButton').addEventListener('click', logout);
+
+          console.log('Skript erfolgreich geladen und initialisiert.');
+      });
+
+      // ========== Globale Freigaben (für inline onclick="...") ==========
+      window.toggleOtherEvent = toggleOtherEvent;
+      window.addEvent = addEvent;
+      window.removeEvent = removeEvent;
+      window.removeName = removeName;
+      window.confirmForEvent = confirmForEvent;
+      window.exportCSV = exportCSV;
+    </script>
+</body>
+</html>
