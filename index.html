@@ -11,7 +11,7 @@
     <!-- Manifest für PWA (Vollbild-Start) -->
     <link rel="manifest" href="manifest.json" />
 
-    <title>G Schichtplanung</title>
+    <title>Goethebunker Schichtplanung</title>
 
     <style>
         :root {
@@ -45,7 +45,7 @@
             background-color: var(--background-color);
             color: #333;
             line-height: 1.6;
-            padding-bottom: 20px;
+            padding-bottom: 60px; /* Platz für Footer */
         }
 
         header {
@@ -73,27 +73,6 @@
             margin-right: 10px;
         }
 
-        #logoutButton {
-            background-color: var(--danger-color);
-            color: var(--white);
-            border: none;
-            border-radius: 4px;
-            padding: 10px 16px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            margin-left: 10px;
-        }
-
-        #logoutButton:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-
-        #logoutButton:active {
-            transform: scale(1);
-        }
-
         .container {
             padding: 20px 15px;
             max-width: 800px;
@@ -117,7 +96,7 @@
             font-size: 1em;
         }
 
-        select:focus, input:focus {
+        select:focus, input:focus, textarea:focus {
             border-color: var(--primary-color);
             outline: none;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
@@ -229,6 +208,46 @@
             border-radius: 50%;
         }
 
+        /* Kommentar-Bereich im Event */
+        .comment-section {
+            margin-top: 10px;
+            background-color: #f9f9f9;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .comment-list {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .comment-item {
+            background-color: #fff;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            padding: 6px 10px;
+            position: relative;
+        }
+        .comment-item .comment-user {
+            font-weight: bold;
+        }
+        .comment-item .comment-text {
+            margin: 4px 0;
+        }
+        .admin-reply {
+            color: #0062cc;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        .comment-actions {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            gap: 5px;
+        }
+
         hr {
             border: none;
             border-top: 1px solid #ddd;
@@ -237,7 +256,7 @@
 
         /* Admin-Bereich für Tabelle */
         #adminSection {
-            display: none; /* Standard: unsichtbar, nur Admin sieht das */
+            display: none; /* nur Admin sieht das */
             margin-top: 40px;
         }
 
@@ -263,6 +282,27 @@
             color: #333;
         }
 
+        /* Footer mit Logout-Button (kleiner) */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--secondary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+        }
+        #logoutButton {
+            width: auto; 
+            padding: 6px 12px;
+            font-size: 0.9em;
+            background-color: var(--danger-color);
+            margin: 0;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             header {
@@ -280,11 +320,6 @@
             #welcomeUser {
                 font-size: 1em;
                 margin-bottom: 10px;
-            }
-
-            #logoutButton {
-                margin-left: 0;
-                width: 100%;
             }
 
             .event {
@@ -347,9 +382,9 @@
 </head>
 <body>
     <header>
-        <div class="title">G Schichtplanung</div>
+        <div class="title">Goethebunker Schichtplanung</div>
         <div id="welcomeUser" style="display: none;">Willkommen!</div>
-        <button id="logoutButton" style="display: none;">Logout</button>
+        <!-- Logout-Button wurde entfernt und in den Footer verschoben -->
     </header>
 
     <div id="notification"></div> <!-- Benachrichtigungsbereich -->
@@ -387,8 +422,6 @@
             <label for="passwordRegister">Passwort:</label>
             <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
 
-            <!-- Hier ist wichtig, dass die id="registerButton" existiert, 
-                 und wir im Skript unten einen Event-Listener darauf setzen. -->
             <button id="registerButton">Registrieren</button>
         </div>
 
@@ -451,6 +484,11 @@
         </div>
     </div>
 
+    <!-- Footer mit kleinem Logout-Button -->
+    <footer>
+        <button id="logoutButton" style="display:none;">Logout</button>
+    </footer>
+
     <!-- JavaScript (ES Module) -->
     <script type="module">
       // ========== Firebase-Importe ==========
@@ -481,7 +519,7 @@
         browserSessionPersistence
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-      // ========== Deine Firebase-Konfiguration (Platzhalter ersetzen!) ==========
+      // ========== Deine Firebase-Konfiguration (Platzhalter!) ==========
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -520,7 +558,7 @@ const firebaseConfig = {
     
       function formatTime(timeStr) {
           if (!timeStr) return '';
-          return timeStr; // z.B. "HH:MM"
+          return timeStr;
       }
 
       // ======== Benachrichtigungen anzeigen ========
@@ -547,7 +585,9 @@ const firebaseConfig = {
           }, 3000);
       }
 
-      // ========== Events-Container anzeigen ==========
+      // =========================================
+      // ========== Events-Container =============
+      // =========================================
       function renderEventContainer(savedData) {
           const eventContainer = document.getElementById('eventContainer');
           eventContainer.innerHTML = '';
@@ -591,10 +631,8 @@ const firebaseConfig = {
                       removeBtn.onclick = () => removeName(event.id, name);
                       nameSpan.appendChild(removeBtn);
                   }
-
                   availabilityDiv.appendChild(nameSpan);
               });
-
               eventDiv.appendChild(availabilityDiv);
 
               // "Bestätigen" Button für eingeloggt
@@ -603,11 +641,91 @@ const firebaseConfig = {
               confirmBtn.onclick = () => confirmForEvent(event.id);
               eventDiv.appendChild(confirmBtn);
 
+              // ----------------------------------------
+              // Kommentar-Bereich
+              // ----------------------------------------
+              const commentSection = document.createElement('div');
+              commentSection.className = 'comment-section';
+
+              // Input für neuen Kommentar
+              const commentInput = document.createElement('textarea');
+              commentInput.placeholder = "Kommentar (max. 160 Zeichen)";
+              commentInput.rows = 3;
+              commentInput.style.width = '100%';
+              commentInput.maxLength = 160;
+
+              const addCommentButton = document.createElement('button');
+              addCommentButton.textContent = 'Kommentar absenden';
+              addCommentButton.onclick = () => addComment(event.id, commentInput);
+
+              commentSection.appendChild(commentInput);
+              commentSection.appendChild(addCommentButton);
+
+              // Bisherige Kommentare
+              const commentList = document.createElement('div');
+              commentList.className = 'comment-list';
+
+              (event.comments || []).forEach(commentObj => {
+                  const commentItem = document.createElement('div');
+                  commentItem.className = 'comment-item';
+
+                  // User + Text
+                  const userEl = document.createElement('div');
+                  userEl.className = 'comment-user';
+                  userEl.textContent = commentObj.user;
+
+                  const textEl = document.createElement('div');
+                  textEl.className = 'comment-text';
+                  textEl.textContent = commentObj.text;
+
+                  commentItem.appendChild(userEl);
+                  commentItem.appendChild(textEl);
+
+                  // Admin-Antwort anzeigen?
+                  if (commentObj.adminReply && commentObj.adminReply.trim().length > 0) {
+                      const replyEl = document.createElement('div');
+                      replyEl.className = 'admin-reply';
+                      replyEl.textContent = "Antwort vom Admin: " + commentObj.adminReply;
+                      commentItem.appendChild(replyEl);
+                  }
+
+                  // Aktionen (Löschen/Antworten) nur für Admin
+                  if (canRemove) {
+                      const actions = document.createElement('div');
+                      actions.className = 'comment-actions';
+
+                      // Löschen
+                      const delBtn = document.createElement('button');
+                      delBtn.textContent = 'Löschen';
+                      delBtn.style.fontSize = '0.8em';
+                      delBtn.onclick = () => removeComment(event.id, commentObj);
+                      actions.appendChild(delBtn);
+
+                      // Beantworten
+                      const replyBtn = document.createElement('button');
+                      replyBtn.textContent = 'Antwort';
+                      replyBtn.style.fontSize = '0.8em';
+                      replyBtn.onclick = () => respondToComment(event.id, commentObj);
+                      actions.appendChild(replyBtn);
+
+                      commentItem.appendChild(actions);
+                  }
+
+                  commentList.appendChild(commentItem);
+              });
+
+              commentSection.appendChild(commentList);
+
+              eventDiv.appendChild(commentSection);
+              // ----------------------------------------
+
               eventContainer.appendChild(eventDiv);
           });
       }
 
-      // ========== Admin-Tabelle anzeigen ==========
+      // =========================================
+      // ========== Admin-Tabelle =================
+      // =========================================
       function renderAvailabilityTable(savedData) {
           const tableBody = document.getElementById('availabilityTable');
           tableBody.innerHTML = '';
@@ -678,9 +796,7 @@ const firebaseConfig = {
               });
 
               renderEventContainer(savedData);
-
               if (canRemove) {
-                  // Admin sieht Tabelle
                   document.getElementById('adminSection').style.display = 'block';
                   renderAvailabilityTable(savedData);
               } else {
@@ -688,7 +804,7 @@ const firebaseConfig = {
               }
           }, (error) => {
               console.error("Fehler beim Abrufen der Events: ", error);
-              showNotification("Fehler beim Abrufen der Events.", "error");
+              showNotification("Fehler beim Abrufen der Events.", 'error');
           });
       }
 
@@ -740,7 +856,8 @@ const firebaseConfig = {
                   datum: eventDate,
                   name: eventName,
                   startzeit: eventTime,
-                  mitarbeiter: []
+                  mitarbeiter: [],
+                  comments: [] // Neues Feld für Kommentare
               });
               showNotification('Event hinzugefügt.');
 
@@ -805,6 +922,92 @@ const firebaseConfig = {
           }
       }
 
+      // =========================================
+      // ========== Kommentare ===================
+      // =========================================
+
+      // Kommentar hinzufügen
+      async function addComment(eventId, inputElem) {
+          if (!loggedInUser) {
+              showNotification('Bitte zuerst einloggen.', 'error');
+              return;
+          }
+          const text = inputElem.value.trim();
+          if (!text) {
+              showNotification('Kommentar ist leer.', 'error');
+              return;
+          }
+          if (text.length > 160) {
+              showNotification('Maximal 160 Zeichen erlaubt.', 'error');
+              return;
+          }
+
+          // Kommt in ein Objekt: (id, user, text, adminReply)
+          const newComment = {
+              id: String(Date.now()), // einfache ID
+              user: loggedInUser,
+              text: text,
+              adminReply: ''
+          };
+
+          try {
+              const eventDocRef = doc(db, "events", eventId);
+              await updateDoc(eventDocRef, {
+                  comments: arrayUnion(newComment)
+              });
+              showNotification('Kommentar hinzugefügt.');
+              inputElem.value = '';
+          } catch (err) {
+              console.error('Fehler beim Kommentar anlegen:', err);
+              showNotification('Fehler beim Kommentar anlegen: ' + err.message, 'error');
+          }
+      }
+
+      // Kommentar entfernen (nur Admin)
+      async function removeComment(eventId, commentObj) {
+          if (!canRemove) return;
+          if (!confirm('Kommentar wirklich löschen?')) return;
+
+          try {
+              const eventDocRef = doc(db, "events", eventId);
+              // Ersetzt den Arrayeintrag um old-Objekt zu entfernen
+              await updateDoc(eventDocRef, {
+                  comments: arrayRemove(commentObj)
+              });
+              showNotification('Kommentar gelöscht.');
+          } catch (err) {
+              console.error('Fehler beim Kommentar löschen:', err);
+              showNotification('Fehler beim Kommentar löschen: ' + err.message, 'error');
+          }
+      }
+
+      // Kommentar beantworten (nur Admin)
+      async function respondToComment(eventId, commentObj) {
+          if (!canRemove) return;
+          const reply = prompt("Antwort des Admins:", commentObj.adminReply || "");
+          if (reply === null) return; // Abbrechen
+
+          // Wir entfernen das alte Objekt und fügen ein neues hinzu
+          const updatedComment = {
+              ...commentObj,
+              adminReply: reply
+          };
+
+          try {
+              const eventDocRef = doc(db, "events", eventId);
+              await updateDoc(eventDocRef, {
+                  comments: arrayRemove(commentObj)
+              });
+              await updateDoc(eventDocRef, {
+                  comments: arrayUnion(updatedComment)
+              });
+              showNotification('Kommentar beantwortet.');
+          } catch (err) {
+              console.error('Fehler beim Beantworten:', err);
+              showNotification('Fehler beim Beantworten: ' + err.message, 'error');
+          }
+      }
+
       // ========== Logout ==========
       async function logout() {
           try {
@@ -835,10 +1038,10 @@ const firebaseConfig = {
               const userCredential = await signInWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
 
-              // Admin-Check (Beispiel: E-Mail-Vergleich)
+              // Admin-Check (Beispiel: E-Mail)
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
 
-              // Wenn displayName nicht gesetzt, fallback auf E-Mail
+              // displayName-Fallback
               loggedInUser = user.displayName || user.email;
               showNotification(`${loggedInUser} ist eingeloggt.`, 'success');
               updateUIAfterLogin();
@@ -850,7 +1053,6 @@ const firebaseConfig = {
 
       // ========== Registrierung ==========
       async function registerWithEmail() {
-          // Hier wird die Funktion aufgerufen, wenn man auf den "Registrieren"-Button klickt.
           const username = document.getElementById('usernameRegister').value.trim();
           const email = document.getElementById('emailRegister').value.trim();
           const password = document.getElementById('passwordRegister').value;
@@ -895,10 +1097,11 @@ const firebaseConfig = {
           const userLabel = document.getElementById('welcomeUser');
           userLabel.textContent = `Willkommen, ${loggedInUser}!`;
           userLabel.style.display = 'block';
-
-          document.getElementById('logoutButton').style.display = 'inline-block';
           
-          // Admin-Bereich sichtbar oder nicht
+          // Footer-Logout anzeigen
+          document.getElementById('logoutButton').style.display = 'inline-block';
+
+          // Admin-Bereich einblenden
           document.getElementById('adminSection').style.display = canRemove ? 'block' : 'none';
       }
 
@@ -909,7 +1112,9 @@ const firebaseConfig = {
           document.getElementById('welcomeUser').textContent = 'Willkommen!';
           document.getElementById('welcomeUser').style.display = 'none';
 
+          // Footer-Logout ausblenden
           document.getElementById('logoutButton').style.display = 'none';
+
           document.getElementById('adminSection').style.display = 'none';
       }
 
@@ -925,7 +1130,7 @@ const firebaseConfig = {
           setCurrentDate();
           initializeAppData();
 
-          // Wichtig: Klick-Handler für Registrierung & Login
+          // Klick-Handler für Registrierung & Login & Logout
           document.getElementById('loginButton').addEventListener('click', loginWithEmail);
           document.getElementById('registerButton').addEventListener('click', registerWithEmail);
           document.getElementById('logoutButton').addEventListener('click', logout);
@@ -940,6 +1145,8 @@ const firebaseConfig = {
       window.removeName = removeName;
       window.confirmForEvent = confirmForEvent;
       window.exportCSV = exportCSV;
+      window.removeComment = removeComment;
+      window.respondToComment = respondToComment;
     </script>
 </body>
 </html>
