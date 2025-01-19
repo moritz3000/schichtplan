@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Manifest für PWA (optional, falls du die App installieren möchtest) -->
+    <!-- Manifest für PWA (optional) -->
     <link rel="manifest" href="manifest.json" />
 
     <title>Goethebunker Schichtplanung</title>
@@ -17,13 +17,11 @@
         :root {
             --primary-color: #007bff;
             --secondary-color: #6c757d;
-            --success-color: #28a745;
             --danger-color: #dc3545;
             --background-color: #f5f5f5;
             --white: #ffffff;
             --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             --border-radius: 8px;
-            --transition-speed: 0.3s;
             --button-padding: 14px 20px;
             --button-font-size: 1em;
             --remove-button-size: 24px;
@@ -31,7 +29,6 @@
             --header-height: 60px;
             --header-font-size: 1.4em;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
-            --notification-height: 50px;
         }
 
         * {
@@ -45,8 +42,8 @@
             background-color: var(--background-color);
             color: #333;
             line-height: 1.6;
+            padding-bottom: 60px; 
             margin: 0;
-            padding-bottom: 60px; /* Platz für Footer */
         }
 
         /* HEADER (statisch) */
@@ -61,12 +58,10 @@
             font-size: var(--header-font-size);
             box-shadow: var(--shadow);
         }
-
         .title {
             font-weight: bold;
             font-size: 1.2em;
         }
-
         #welcomeUser {
             font-size: 1em;
             margin-right: 10px;
@@ -84,21 +79,13 @@
             font-weight: bold;
             font-size: 1em;
         }
-
         select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"], textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 16px;
             border: 1px solid #ccc;
             border-radius: var(--border-radius);
-            transition: border-color var(--transition-speed);
             font-size: 1em;
-        }
-
-        select:focus, input:focus, textarea:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
         }
 
         button {
@@ -108,17 +95,14 @@
             border: none;
             border-radius: var(--border-radius);
             cursor: pointer;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
             font-size: var(--button-font-size);
             width: 100%;
             margin-bottom: 16px;
         }
-
         button:hover {
             background-color: #0056b3;
             transform: translateY(-2px);
         }
-
         button:active {
             transform: translateY(0);
         }
@@ -135,9 +119,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
         }
-
         .remove-event:hover, .remove:hover {
             background-color: #c82333;
             transform: scale(1.1);
@@ -155,30 +137,13 @@
             flex-direction: column;
             gap: 12px;
         }
-
         .event h3 {
             font-size: 1.2em;
             color: var(--primary-color);
-            user-select: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin: 0;
-        }
-
-        .event p {
-            margin: 0;
-            font-size: 1em;
-        }
-
-        .remove-event {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: var(--remove-button-size);
-            height: var(--remove-button-size);
-            border-radius: 50%;
-            font-size: 1em;
         }
 
         .availability {
@@ -187,7 +152,6 @@
             gap: 8px;
             margin-top: 10px;
         }
-
         .name-item {
             background-color: #e9ecef;
             padding: 8px 12px;
@@ -198,7 +162,6 @@
             font-size: 0.9em;
             margin-bottom: 6px;
         }
-
         .name-item .remove {
             padding: 0;
             width: var(--small-remove-button-size);
@@ -221,14 +184,12 @@
             border: 1px solid #ddd;
             padding: 10px;
         }
-
         .comment-list {
             margin-top: 10px;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-
         .comment-item {
             background-color: #fff;
             border-radius: var(--border-radius);
@@ -236,22 +197,6 @@
             padding: 8px 10px;
             position: relative;
         }
-
-        /* X zum Löschen oben rechts (nur Admin) */
-        .comment-remove-x {
-            position: absolute;
-            top: 6px;
-            right: 8px;
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 1em;
-            cursor: pointer;
-        }
-        .comment-remove-x:hover {
-            color: #333;
-        }
-
         .comment-user {
             font-weight: bold;
             display: inline-block;
@@ -269,8 +214,24 @@
             font-weight: bold;
             margin-top: 4px;
         }
+        /* X oben rechts (Admin, Kommentar löschen) */
+        .comment-remove-x {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .comment-remove-x:hover {
+            color: #333;
+        }
 
-        /* Herz + Zähler in kleinem grauen Container */
+        /* Herz + Zähler in kleinem, leicht grauem Container; 
+           KEINE Hover-Animation, nur Klick toggelt rot.
+        */
         .like-container {
             display: flex;
             justify-content: flex-end;
@@ -279,31 +240,32 @@
         .likebox {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            border-radius: 8px;
+            gap: 4px;
+            border-radius: 4px;
             background-color: #eee;
-            padding: 4px 8px;
+            padding: 2px 6px; /* schmaler als zuvor */
         }
         .like-btn {
             border: none;
             background: none;
             cursor: pointer;
-            font-size: 1.3em;
-            color: #000; /* Standard Schwarz/Umriss-Herz */
+            font-size: 1.1em; /* kleiner */
+            color: #000;
+            /* keine hover animation */
         }
-        /* Kein Hover-Effekt mehr. Nur Klick toggelt. */
         .like-outlined::before {
-            content: "♡"; /* Umriss-Herz */
+            content: "♡";
         }
         .like-filled::before {
-            content: "♥"; /* Gefülltes Herz */
-            color: #e53939; /* Rot */
+            content: "♥";
+            color: #e53939;
         }
         .like-count {
-            font-size: 0.9em;
+            font-size: 0.85em; /* etwas kleiner */
+            margin: 0;
         }
 
-        /* Admin-Button "Antwort" ganz unten (optional) */
+        /* Admin-Button "Antwort" unten */
         .comment-actions {
             display: flex;
             gap: 8px;
@@ -314,29 +276,25 @@
             font-size: 0.8em;
         }
 
-        /* Admin-Bereich für Tabelle */
+        /* Admin-Bereich */
         #adminSection {
-            display: none; /* nur Admin sieht das */
+            display: none; /* nur für Admin */
             margin-top: 40px;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 16px;
         }
-
         table, th, td {
             border: 1px solid #ddd;
         }
-
         th, td {
             padding: 12px;
             text-align: left;
             font-size: 1em;
             vertical-align: top;
         }
-
         th {
             background-color: #f2f2f2;
             color: #333;
@@ -410,7 +368,6 @@
             max-width: 90%;
             z-index: 2000;
         }
-
         .notification-message {
             background-color: #28a745; /* Erfolg */
             color: var(--white);
@@ -473,7 +430,7 @@
             <button id="registerButton">Registrieren</button>
         </div>
 
-        <!-- Event-Formular (für Administratoren) -->
+        <!-- Event-Formular (nur für Admin) -->
         <form class="content" id="eventForm" style="display: none;">
             <h3>Neues Event hinzufügen</h3>
             <label for="eventName">Event Name:</label>
@@ -494,7 +451,6 @@
                 <input type="text" id="otherEvent" placeholder="Event Name eingeben">
             </div>
 
-            <!-- Datum und Startzeit nebeneinander -->
             <div style="display: flex; gap: 20px;">
                 <div style="flex: 1;">
                     <label for="eventDate">Datum:</label>
@@ -511,9 +467,7 @@
         </form>
 
         <!-- Container für Events -->
-        <div id="eventContainer">
-            <!-- Dynamisch hinzugefügte Events -->
-        </div>
+        <div id="eventContainer"></div>
 
         <!-- Admin-Bereich: Verfügbarkeits-Tabelle + CSV-Export -->
         <div id="adminSection">
@@ -532,7 +486,6 @@
         </div>
     </div>
 
-    <!-- Statischer Footer -->
     <footer>
         <button id="logoutButton" style="display:none;">Logout</button>
     </footer>
@@ -542,32 +495,32 @@
       // ========== Firebase-Importe ==========
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-      import { 
-        getFirestore, 
-        collection, 
-        addDoc, 
-        updateDoc, 
-        deleteDoc, 
-        doc, 
-        onSnapshot, 
-        query, 
-        where, 
-        arrayUnion, 
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        updateDoc,
+        deleteDoc,
+        doc,
+        onSnapshot,
+        query,
+        where,
+        arrayUnion,
         arrayRemove,
         getDocs
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-      import { 
-        getAuth, 
-        signInWithEmailAndPassword, 
-        createUserWithEmailAndPassword, 
-        onAuthStateChanged, 
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        onAuthStateChanged,
         updateProfile,
         setPersistence,
         browserLocalPersistence,
         browserSessionPersistence
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-      // ========== DEINE Firebase-Konfiguration ==========
+      // ========== Firebase-Konfiguration ==========
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -584,10 +537,10 @@ const firebaseConfig = {
       const db = getFirestore(app);
       const auth = getAuth(app);
 
-      let loggedInUser = null;  // Anzeigename
-      let loggedInEmail = null; // E-Mail (für Like-Check)
-      let canRemove = false;    // Admin-Rechte
-      let allEvents = [];       // CSV-Export
+      let loggedInUser = null;
+      let loggedInEmail = null;
+      let canRemove = false;
+      let allEvents = [];
 
       // ========== Hilfsfunktionen ==========
       function setCurrentDate() {
@@ -596,7 +549,6 @@ const firebaseConfig = {
           const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
           currentDateElement.textContent = today.toLocaleDateString('de-DE', options);
       }
-
       function formatDate(dateStr) {
           if (!dateStr) return '';
           const date = new Date(dateStr);
@@ -611,66 +563,51 @@ const firebaseConfig = {
           const d = new Date(isoString);
           return d.toLocaleString('de-DE');
       }
-
       function showNotification(message, type = 'success') {
-          const notificationContainer = document.getElementById('notification');
-          const notification = document.createElement('div');
-          notification.className = 'notification-message';
-
-          if (type === 'error') {
-              notification.classList.add('notification-error');
-          } else if (type === 'info') {
-              notification.classList.add('notification-info');
-          }
-
-          notification.textContent = message;
-          notificationContainer.appendChild(notification);
-
-          // Nach 3 Sek. weg
+          const container = document.getElementById('notification');
+          const notif = document.createElement('div');
+          notif.className = 'notification-message';
+          if (type === 'error') notif.classList.add('notification-error');
+          if (type === 'info') notif.classList.add('notification-info');
+          notif.textContent = message;
+          container.appendChild(notif);
           setTimeout(() => {
-              notification.style.opacity = '0';
+              notif.style.opacity = '0';
               setTimeout(() => {
-                  notification.remove();
+                  notif.remove();
               }, 500);
           }, 3000);
       }
 
       // ========== Events rendern ==========
-      function renderEventContainer(savedData) {
+      function renderEventContainer(eventsData) {
           const eventContainer = document.getElementById('eventContainer');
           eventContainer.innerHTML = '';
-          allEvents = savedData;
+          allEvents = eventsData;
 
-          savedData.forEach((event) => {
+          eventsData.forEach(event => {
               const eventDiv = document.createElement('div');
               eventDiv.className = 'event';
 
               const dateStr = formatDate(event.datum);
               const timeStr = formatTime(event.startzeit);
-
               eventDiv.innerHTML = `
                   <p><strong>${dateStr}</strong> • Startzeit: ${timeStr} Uhr</p>
                   <h3>${event.name}</h3>
-                  ${
-                    canRemove 
-                    ? `<button class="remove-event" onclick="removeEvent('${event.id}')">x</button>`
-                    : ''
-                  }
+                  ${canRemove ? `<button class="remove-event" onclick="removeEvent('${event.id}')">x</button>` : ''}
               `;
 
               // Teilnehmer
               const availabilityDiv = document.createElement('div');
               availabilityDiv.className = 'availability';
-              (event.mitarbeiter || []).forEach((name) => {
+              (event.mitarbeiter || []).forEach(name => {
                   const nameSpan = document.createElement('span');
                   nameSpan.className = 'name-item';
                   nameSpan.textContent = name;
-
                   if (canRemove) {
                       const removeBtn = document.createElement('button');
                       removeBtn.className = 'remove';
                       removeBtn.textContent = 'x';
-                      removeBtn.title = 'Name entfernen';
                       removeBtn.onclick = () => removeName(event.id, name);
                       nameSpan.appendChild(removeBtn);
                   }
@@ -706,11 +643,11 @@ const firebaseConfig = {
               const commentList = document.createElement('div');
               commentList.className = 'comment-list';
 
-              (event.comments || []).forEach((commentObj) => {
+              (event.comments || []).forEach(commentObj => {
                   const commentItem = document.createElement('div');
                   commentItem.className = 'comment-item';
 
-                  // X oben rechts fürs Löschen (nur Admin)
+                  // X oben rechts (nur Admin)
                   if (canRemove) {
                       const removeX = document.createElement('button');
                       removeX.className = 'comment-remove-x';
@@ -720,31 +657,31 @@ const firebaseConfig = {
                   }
 
                   // Name + Datum
-                  const userSpan = document.createElement('span');
-                  userSpan.className = 'comment-user';
-                  userSpan.textContent = commentObj.user;
+                  const userEl = document.createElement('span');
+                  userEl.className = 'comment-user';
+                  userEl.textContent = commentObj.user;
 
-                  const metaSpan = document.createElement('span');
-                  metaSpan.className = 'comment-meta';
-                  metaSpan.textContent = ` (${formatDateTime(commentObj.timestamp)})`;
-                  userSpan.appendChild(metaSpan);
+                  const metaEl = document.createElement('span');
+                  metaEl.className = 'comment-meta';
+                  metaEl.textContent = ` (${formatDateTime(commentObj.timestamp)})`;
+                  userEl.appendChild(metaEl);
 
-                  const textDiv = document.createElement('div');
-                  textDiv.className = 'comment-text';
-                  textDiv.textContent = commentObj.text;
+                  const textEl = document.createElement('div');
+                  textEl.className = 'comment-text';
+                  textEl.textContent = commentObj.text;
 
-                  commentItem.appendChild(userSpan);
-                  commentItem.appendChild(textDiv);
+                  commentItem.appendChild(userEl);
+                  commentItem.appendChild(textEl);
 
-                  // Admin-Antwort?
+                  // Admin-Antwort
                   if (commentObj.adminReply && commentObj.adminReply.trim()) {
-                      const replyDiv = document.createElement('div');
-                      replyDiv.className = 'admin-reply';
-                      replyDiv.textContent = "Antwort vom Admin: " + commentObj.adminReply;
-                      commentItem.appendChild(replyDiv);
+                      const adminReplyEl = document.createElement('div');
+                      adminReplyEl.className = 'admin-reply';
+                      adminReplyEl.textContent = "Antwort vom Admin: " + commentObj.adminReply;
+                      commentItem.appendChild(adminReplyEl);
                   }
 
-                  // Like-Bereich im kleinen grauen Container
+                  // Like-Box
                   const likeContainer = document.createElement('div');
                   likeContainer.className = 'like-container';
 
@@ -753,11 +690,15 @@ const firebaseConfig = {
 
                   const likeBtn = document.createElement('button');
                   likeBtn.className = 'like-btn';
-                  // ist der aktuelle User in den Likes?
+
                   const userEmail = loggedInEmail || loggedInUser;
                   const likesArray = commentObj.likes || [];
                   const isLiked = likesArray.includes(userEmail);
-                  likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
+                  if (isLiked) {
+                      likeBtn.classList.add('like-filled');
+                  } else {
+                      likeBtn.classList.add('like-outlined');
+                  }
                   likeBtn.onclick = () => toggleLike(event.id, commentObj);
 
                   const likeCount = document.createElement('span');
@@ -769,17 +710,17 @@ const firebaseConfig = {
                   likeContainer.appendChild(likeBox);
                   commentItem.appendChild(likeContainer);
 
-                  // Admin-Button "Antwort" (falls gewünscht)
+                  // Admin-Button "Antwort" (optional)
                   if (canRemove) {
-                      const actionsDiv = document.createElement('div');
-                      actionsDiv.className = 'comment-actions';
+                      const actions = document.createElement('div');
+                      actions.className = 'comment-actions';
 
                       const replyBtn = document.createElement('button');
                       replyBtn.textContent = 'Antwort';
                       replyBtn.onclick = () => respondToComment(event.id, commentObj);
 
-                      actionsDiv.appendChild(replyBtn);
-                      commentItem.appendChild(actionsDiv);
+                      actions.appendChild(replyBtn);
+                      commentItem.appendChild(actions);
                   }
 
                   commentList.appendChild(commentItem);
@@ -793,29 +734,26 @@ const firebaseConfig = {
       }
 
       // ========== Admin-Tabelle ==========
-      function renderAvailabilityTable(savedData) {
+      function renderAvailabilityTable(eventsData) {
           const tableBody = document.getElementById('availabilityTable');
           tableBody.innerHTML = '';
 
-          savedData.forEach((event) => {
+          eventsData.forEach(event => {
               const row = document.createElement('tr');
 
-              // Datum
               const datumCell = document.createElement('td');
               datumCell.textContent = formatDate(event.datum);
               row.appendChild(datumCell);
 
-              // Event-Name
               const nameCell = document.createElement('td');
               nameCell.textContent = event.name;
               row.appendChild(nameCell);
 
-              // Mitarbeiter
               const mitarbeiterCell = document.createElement('td');
-              (event.mitarbeiter || []).forEach((name) => {
-                  const nameSpan = document.createElement('span');
-                  nameSpan.textContent = name + ' | ';
-                  mitarbeiterCell.appendChild(nameSpan);
+              (event.mitarbeiter || []).forEach(name => {
+                  const span = document.createElement('span');
+                  span.textContent = name + ' | ';
+                  mitarbeiterCell.appendChild(span);
               });
               row.appendChild(mitarbeiterCell);
 
@@ -830,16 +768,16 @@ const firebaseConfig = {
               return;
           }
           if (!allEvents.length) {
-              showNotification('Keine Events zum Exportieren.', 'info');
+              showNotification('Keine Daten zum Exportieren.', 'info');
               return;
           }
 
           let csvContent = "Datum;Event;Mitarbeiter\n";
-          allEvents.forEach(event => {
-              const dateStr = formatDate(event.datum);
-              const nameStr = event.name;
-              const mitarbeiterStr = (event.mitarbeiter || []).join(", ");
-              csvContent += `${dateStr};${nameStr};${mitarbeiterStr}\n`;
+          allEvents.forEach(ev => {
+              const dateStr = formatDate(ev.datum);
+              const nameStr = ev.name;
+              const staff = (ev.mitarbeiter || []).join(", ");
+              csvContent += `${dateStr};${nameStr};${staff}\n`;
           });
 
           const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -853,36 +791,35 @@ const firebaseConfig = {
           document.body.removeChild(link);
       }
 
-      // ========== Daten holen (Realtime-Listener) ==========
+      // ========== Realtime-Listener auf "events" ==========
       function initializeAppData() {
-          const eventsCollection = collection(db, "events");
-          onSnapshot(eventsCollection, (snapshot) => {
-              const savedData = [];
-              snapshot.forEach((docData) => {
-                  savedData.push({ id: docData.id, ...docData.data() });
+          const coll = collection(db, "events");
+          onSnapshot(coll, snapshot => {
+              const data = [];
+              snapshot.forEach(docData => {
+                  data.push({ id: docData.id, ...docData.data() });
               });
-
-              renderEventContainer(savedData);
+              renderEventContainer(data);
               if (canRemove) {
                   document.getElementById('adminSection').style.display = 'block';
-                  renderAvailabilityTable(savedData);
+                  renderAvailabilityTable(data);
               } else {
                   document.getElementById('adminSection').style.display = 'none';
               }
-          }, (err) => {
-              console.error("Fehler beim Abrufen der Events:", err);
-              showNotification("Fehler beim Abrufen der Events.", 'error');
+          }, err => {
+              console.error('Fehler beim Abrufen der Events:', err);
+              showNotification('Fehler beim Abrufen der Events.', 'error');
           });
       }
 
-      // ========== Event hinzufügen (Admin) ==========
+      // ========== Neues Event hinzufügen (Admin) ==========
       async function addEvent() {
           if (!canRemove) {
               showNotification('Nur Admin kann Events anlegen.', 'error');
               return;
           }
-          const eventNameSel = document.getElementById('eventName').value.trim();
-          let eventName = eventNameSel;
+
+          let eventName = document.getElementById('eventName').value.trim();
           if (!eventName) {
               showNotification('Bitte einen Event-Namen wählen oder eingeben.', 'error');
               return;
@@ -904,13 +841,12 @@ const firebaseConfig = {
           }
 
           try {
-              // Prüfen, ob Event existiert
-              const q = query(collection(db, "events"),
+              const qy = query(collection(db, "events"),
                 where("datum", "==", eventDate),
                 where("name", "==", eventName),
                 where("startzeit", "==", eventTime)
               );
-              const snap = await getDocs(q);
+              const snap = await getDocs(qy);
               if (!snap.empty) {
                   showNotification('Dieses Event existiert bereits.', 'error');
                   return;
@@ -932,14 +868,13 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Event entfernen ==========
+      // ========== Event löschen (Admin) ==========
       async function removeEvent(eventId) {
           if (!canRemove) {
               showNotification('Nur Admin kann Events löschen.', 'error');
               return;
           }
-          if (!confirm('Möchtest du dieses Event wirklich löschen?')) return;
-
+          if (!confirm('Event wirklich löschen?')) return;
           try {
               await deleteDoc(doc(db, "events", eventId));
               showNotification('Event gelöscht.');
@@ -949,10 +884,10 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Bestätigen (Nutzer) ==========
+      // ========== Nutzer bestätigt Event ==========
       async function confirmForEvent(eventId) {
           if (!loggedInUser) {
-              showNotification('Bitte erst einloggen.', 'error');
+              showNotification('Bitte einloggen.', 'error');
               return;
           }
           try {
@@ -966,7 +901,7 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Name entfernen (Admin) ==========
+      // ========== Nutzer entfernen (Admin) ==========
       async function removeName(eventId, name) {
           if (!canRemove) return;
           try {
@@ -980,10 +915,10 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Kommentar absenden ==========
+      // ========== Kommentar hinzufügen ==========
       async function addComment(eventId, inputElem) {
           if (!loggedInUser) {
-              showNotification('Bitte erst einloggen.', 'error');
+              showNotification('Bitte einloggen, um zu kommentieren.', 'error');
               return;
           }
           const text = inputElem.value.trim();
@@ -992,27 +927,26 @@ const firebaseConfig = {
               return;
           }
           if (text.length > 160) {
-              showNotification('Max. 160 Zeichen.', 'error');
+              showNotification('Maximal 160 Zeichen.', 'error');
               return;
           }
 
-          const newComment = {
+          const newCmt = {
               id: String(Date.now()),
               user: loggedInUser,
-              text: text,
+              text,
               adminReply: '',
               timestamp: new Date().toISOString(),
               likes: []
           };
-
           try {
               await updateDoc(doc(db, "events", eventId), {
-                  comments: arrayUnion(newComment)
+                  comments: arrayUnion(newCmt)
               });
               showNotification('Kommentar hinzugefügt.');
               inputElem.value = '';
           } catch (err) {
-              console.error('Fehler beim Kommentar anlegen:', err);
+              console.error('Fehler beim Kommentar:', err);
               showNotification('Fehler beim Kommentar: ' + err.message, 'error');
           }
       }
@@ -1021,7 +955,6 @@ const firebaseConfig = {
       async function removeComment(eventId, commentObj) {
           if (!canRemove) return;
           if (!confirm('Diesen Kommentar wirklich löschen?')) return;
-
           try {
               await updateDoc(doc(db, "events", eventId), {
                   comments: arrayRemove(commentObj)
@@ -1039,15 +972,11 @@ const firebaseConfig = {
           const reply = prompt("Antwort des Admins:", commentObj.adminReply || "");
           if (reply === null) return;
 
-          const updatedComment = {
-              ...commentObj,
-              adminReply: reply
-          };
-
+          const updated = { ...commentObj, adminReply: reply };
           try {
-              const eventRef = doc(db, "events", eventId);
-              await updateDoc(eventRef, { comments: arrayRemove(commentObj) });
-              await updateDoc(eventRef, { comments: arrayUnion(updatedComment) });
+              const ref = doc(db, "events", eventId);
+              await updateDoc(ref, { comments: arrayRemove(commentObj) });
+              await updateDoc(ref, { comments: arrayUnion(updated) });
               showNotification('Kommentar beantwortet.');
           } catch (err) {
               console.error('Fehler beim Beantworten:', err);
@@ -1063,24 +992,17 @@ const firebaseConfig = {
           }
           const userEmail = loggedInEmail || loggedInUser;
           const newLikes = Array.isArray(commentObj.likes) ? [...commentObj.likes] : [];
-
           if (newLikes.includes(userEmail)) {
-              // schon geliked -> entfernen
               newLikes.splice(newLikes.indexOf(userEmail), 1);
           } else {
-              // nicht geliked -> hinzufügen
               newLikes.push(userEmail);
           }
 
-          const updated = {
-              ...commentObj,
-              likes: newLikes
-          };
-
+          const updated = { ...commentObj, likes: newLikes };
           try {
-              const eventRef = doc(db, "events", eventId);
-              await updateDoc(eventRef, { comments: arrayRemove(commentObj) });
-              await updateDoc(eventRef, { comments: arrayUnion(updated) });
+              const ref = doc(db, "events", eventId);
+              await updateDoc(ref, { comments: arrayRemove(commentObj) });
+              await updateDoc(ref, { comments: arrayUnion(updated) });
           } catch (err) {
               console.error('Fehler beim Liken:', err);
               showNotification('Fehler beim Liken: ' + err.message, 'error');
@@ -1101,25 +1023,20 @@ const firebaseConfig = {
       // ========== Login ==========
       async function loginWithEmail() {
           const email = document.getElementById('emailInput').value.trim();
-          const password = document.getElementById('passwordLogin').value;
+          const pw = document.getElementById('passwordLogin').value;
           const staySignedIn = document.getElementById('staySignedIn').checked;
 
-          if (!email || !password) {
+          if (!email || !pw) {
               showNotification('Bitte E-Mail und Passwort eingeben.', 'error');
               return;
           }
-
           const persistenceType = staySignedIn ? browserLocalPersistence : browserSessionPersistence;
           try {
               await setPersistence(auth, persistenceType);
-
-              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const userCredential = await signInWithEmailAndPassword(auth, email, pw);
               const user = userCredential.user;
 
-              // Admin-Check
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
-
-              // Anzeigename
               loggedInUser = user.displayName || user.email;
               loggedInEmail = user.email;
               showNotification(`${loggedInUser} ist eingeloggt.`, 'success');
@@ -1153,7 +1070,7 @@ const firebaseConfig = {
       }
 
       // ========== Auth-Listener ==========
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, user => {
           if (user) {
               loggedInUser = user.displayName || user.email;
               loggedInEmail = user.email;
@@ -1171,15 +1088,12 @@ const firebaseConfig = {
       function updateUIAfterLogin() {
           document.getElementById('authSection').style.display = 'none';
           document.getElementById('eventForm').style.display = canRemove ? 'block' : 'none';
-
           const userLabel = document.getElementById('welcomeUser');
           userLabel.textContent = `Willkommen, ${loggedInUser}!`;
           userLabel.style.display = 'block';
-
           document.getElementById('logoutButton').style.display = 'inline-block';
           document.getElementById('adminSection').style.display = canRemove ? 'block' : 'none';
       }
-
       function updateUIAfterLogout() {
           document.getElementById('authSection').style.display = 'block';
           document.getElementById('eventForm').style.display = 'none';
@@ -1190,11 +1104,11 @@ const firebaseConfig = {
 
       function toggleOtherEvent() {
           const val = document.getElementById('eventName').value;
-          const otherEventContainer = document.getElementById('otherEventContainer');
-          otherEventContainer.style.display = (val === 'sonstige') ? 'block' : 'none';
+          document.getElementById('otherEventContainer').style.display = 
+              (val === 'sonstige') ? 'block' : 'none';
       }
 
-      // ========== Start ==========
+      // ========== START ==========
       document.addEventListener('DOMContentLoaded', () => {
           setCurrentDate();
           initializeAppData();
@@ -1206,7 +1120,7 @@ const firebaseConfig = {
           console.log('Skript erfolgreich geladen und initialisiert.');
       });
 
-      // ========== Globale Freigaben (für inline onclick) ==========
+      // ========== Globale Exports (für inline onclick="...") ==========
       window.toggleOtherEvent = toggleOtherEvent;
       window.addEvent = addEvent;
       window.removeEvent = removeEvent;
