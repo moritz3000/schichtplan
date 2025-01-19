@@ -45,11 +45,10 @@
             background-color: var(--background-color);
             color: #333;
             line-height: 1.6;
-            padding-bottom: 60px; /* Platz für Footer */
             margin: 0;
         }
 
-        /* HEADER */
+        /* HEADER - jetzt ganz normal im Flow, nicht fixiert */
         header {
             background-color: var(--primary-color);
             color: var(--white);
@@ -60,12 +59,6 @@
             justify-content: space-between;
             font-size: var(--header-font-size);
             box-shadow: var(--shadow);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            transition: transform 0.3s ease; /* Für das Ein-/Ausblenden per transform */
         }
 
         .title {
@@ -78,11 +71,8 @@
             margin-right: 10px;
         }
 
-        /* SCROLL-TRIGGER: header versteckt sich bei Scroll down, wir nutzen JavaScript unten */
-
-        /* CONTAINER */
         .container {
-            padding: 80px 15px 20px; /* 80px top, damit der Inhalt nicht unter dem Header liegt */
+            padding: 20px 15px;
             max-width: 800px;
             margin: auto;
         }
@@ -222,7 +212,7 @@
             margin: 20px 0;
         }
 
-        /* Kommentar-Bereich im Event */
+        /* Kommentar-Bereich */
         .comment-section {
             margin-top: 10px;
             background-color: #f9f9f9;
@@ -240,13 +230,18 @@
             background-color: #fff;
             border-radius: var(--border-radius);
             border: 1px solid #ddd;
-            padding: 6px 10px;
+            padding: 12px;
             position: relative;
         }
-        .comment-item .comment-user {
+        .comment-user {
             font-weight: bold;
         }
-        .comment-item .comment-text {
+        .comment-meta {
+            font-size: 0.8em;
+            color: #999;
+            margin-left: 6px;
+        }
+        .comment-text {
             margin: 4px 0;
         }
         .admin-reply {
@@ -254,38 +249,44 @@
             font-weight: bold;
             margin-top: 4px;
         }
-        .comment-actions {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            display: flex;
-            gap: 5px;
-        }
-        .comment-meta {
-            font-size: 0.8em;
-            color: #888;
-            margin-left: 6px;
-        }
 
-        .like-container {
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            margin-top: 4px;
+        /* Like-Button unten rechts */
+        .like-btn-container {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .like-btn {
             border: none;
             background: none;
             cursor: pointer;
-            color: #e53939; /* Herz-Farbe */
             font-size: 1.2em;
-            transition: transform 0.2s;
+            color: #888; /* Outline-Farbe für '♡' */
+            transition: transform 0.2s, color 0.2s;
         }
         .like-btn:hover {
             transform: scale(1.2);
         }
+        /* Geklickt -> rotes Herz */
+        .like-btn.liked {
+            color: #e53939;
+        }
         .like-count {
             font-size: 0.9em;
+        }
+
+        /* Admin-Actions unten im Kommentarcontainer */
+        .admin-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .admin-actions button {
+            width: auto;
+            font-size: 0.85em;
         }
 
         /* Admin-Bereich für Tabelle */
@@ -316,19 +317,14 @@
             color: #333;
         }
 
-        /* FOOTER (mit Logout-Button) */
+        /* Footer normal im Flow */
         footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
             background-color: var(--secondary-color);
+            padding: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 8px;
             box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
         }
         #logoutButton {
             width: auto; 
@@ -372,6 +368,10 @@
                 height: 16px;
                 font-size: 0.75em;
             }
+            .like-btn-container {
+                right: 8px;
+                bottom: 8px;
+            }
         }
 
         /* Benachrichtigungsbereich */
@@ -382,7 +382,6 @@
             max-width: 90%;
             z-index: 2000;
         }
-
         .notification-message {
             background-color: #28a745; /* Erfolg */
             color: var(--white);
@@ -402,7 +401,6 @@
     </style>
 </head>
 <body>
-    <!-- Header wird per JavaScript ausgeblendet beim Scrollen -->
     <header>
         <div class="title">Goethebunker Schichtplanung</div>
         <div id="welcomeUser" style="display: none;">Willkommen!</div>
@@ -505,7 +503,7 @@
         </div>
     </div>
 
-    <!-- Footer mit Logout-Button (versteckt sich beim Scrollen) -->
+    <!-- Footer normal im Seitenfluss -->
     <footer>
         <button id="logoutButton" style="display:none;">Logout</button>
     </footer>
@@ -541,15 +539,15 @@
       } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
       // ========== Deine Firebase-Konfiguration (Platzhalter!) ==========
-const firebaseConfig = {
-  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-  authDomain: "schichtplan-5c70f.firebaseapp.com",
-  projectId: "schichtplan-5c70f",
-  storageBucket: "schichtplan-5c70f.firebasestorage.app",
-  messagingSenderId: "502149312331",
-  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
-  measurementId: "G-0DL0R5B7LV"
-};
+      const firebaseConfig = {
+        apiKey: "DEINE_API_KEY",
+        authDomain: "DEINE_AUTH_DOMAIN",
+        projectId: "DEIN_PROJECT_ID",
+        storageBucket: "DEIN_STORAGE_BUCKET",
+        messagingSenderId: "DEINE_SENDER_ID",
+        appId: "DEINE_APP_ID",
+        measurementId: "DEINE_MEASUREMENT_ID"
+      };
 
       // ========== Firebase initialisieren ==========
       const app = initializeApp(firebaseConfig);
@@ -558,11 +556,11 @@ const firebaseConfig = {
       const auth = getAuth(app);
       
       let loggedInUser = null;
-      let loggedInEmail = null; // Für Likes eindeutig
+      let loggedInEmail = null; // um Likes eindeutig zuzuordnen
       let canRemove = false; // Admin-Rechte
       let allEvents = [];    // CSV-Export
 
-      // ======== Anzeige: heutiges Datum im Header ========
+      // ======== Heutiges Datum für Anzeige ========
       function setCurrentDate() {
           const currentDateElement = document.getElementById('currentDate');
           const today = new Date();
@@ -577,17 +575,14 @@ const firebaseConfig = {
           const options = { day: '2-digit', month: '2-digit', year: 'numeric', weekday: 'long' };
           return date.toLocaleDateString('de-DE', options);
       }
-    
       function formatTime(timeStr) {
           if (!timeStr) return '';
-          return timeStr;
+          return timeStr; // "HH:MM"
       }
-
-      // Kompakte Zeit für Kommentare (z. B. 19.01.2025, 14:23)
       function formatDateTime(isoString) {
           if (!isoString) return '';
           const d = new Date(isoString);
-          return d.toLocaleString('de-DE'); // z.B. "19.1.2025, 14:23:05"
+          return d.toLocaleString('de-DE'); // z. B. "19.1.2025, 14:23:05"
       }
 
       // ======== Benachrichtigungen anzeigen ========
@@ -664,7 +659,7 @@ const firebaseConfig = {
               });
               eventDiv.appendChild(availabilityDiv);
 
-              // "Bestätigen" Button für eingeloggt
+              // "Bestätigen" Button
               const confirmBtn = document.createElement('button');
               confirmBtn.textContent = 'Bestätigen';
               confirmBtn.onclick = () => confirmForEvent(event.id);
@@ -698,18 +693,18 @@ const firebaseConfig = {
                   const commentItem = document.createElement('div');
                   commentItem.className = 'comment-item';
 
-                  // User + Datum
+                  // Zeile: User + Timestamp
                   const userEl = document.createElement('div');
                   userEl.className = 'comment-user';
                   userEl.textContent = commentObj.user;
 
-                  // Datum/Uhrzeit
+                  // Dezentes Datum
                   const metaEl = document.createElement('span');
                   metaEl.className = 'comment-meta';
                   metaEl.textContent = `(${formatDateTime(commentObj.timestamp)})`;
                   userEl.appendChild(metaEl);
 
-                  // Kommentar-Text
+                  // Kommentartext
                   const textEl = document.createElement('div');
                   textEl.className = 'comment-text';
                   textEl.textContent = commentObj.text;
@@ -717,7 +712,7 @@ const firebaseConfig = {
                   commentItem.appendChild(userEl);
                   commentItem.appendChild(textEl);
 
-                  // Admin-Antwort anzeigen?
+                  // Admin-Antwort?
                   if (commentObj.adminReply && commentObj.adminReply.trim().length > 0) {
                       const replyEl = document.createElement('div');
                       replyEl.className = 'admin-reply';
@@ -725,45 +720,50 @@ const firebaseConfig = {
                       commentItem.appendChild(replyEl);
                   }
 
-                  // Like-Bereich
+                  // Like-Button unten rechts
                   const likeContainer = document.createElement('div');
-                  likeContainer.className = 'like-container';
+                  likeContainer.className = 'like-btn-container';
 
                   const likeBtn = document.createElement('button');
                   likeBtn.className = 'like-btn';
-                  likeBtn.textContent = '♥';
-                  likeBtn.title = 'Kommentar liken';
+                  // Prüfen, ob User bereits geliked
+                  const likesArray = commentObj.likes || [];
+                  const userInLikes = likesArray.includes(loggedInEmail);
+
+                  likeBtn.textContent = userInLikes ? '♥' : '♡';
+                  if (userInLikes) {
+                      likeBtn.classList.add('liked');
+                  }
+
                   likeBtn.onclick = () => toggleLike(event.id, commentObj);
 
                   const likeCount = document.createElement('span');
                   likeCount.className = 'like-count';
-                  const likesArray = commentObj.likes || [];
                   likeCount.textContent = String(likesArray.length);
 
                   likeContainer.appendChild(likeBtn);
                   likeContainer.appendChild(likeCount);
+
                   commentItem.appendChild(likeContainer);
 
-                  // Aktionen (Löschen/Antworten) nur für Admin
+                  // Admin-Actions unten
                   if (canRemove) {
-                      const actions = document.createElement('div');
-                      actions.className = 'comment-actions';
+                      const adminActions = document.createElement('div');
+                      adminActions.className = 'admin-actions';
 
                       // Löschen
                       const delBtn = document.createElement('button');
                       delBtn.textContent = 'Löschen';
-                      delBtn.style.fontSize = '0.8em';
                       delBtn.onclick = () => removeComment(event.id, commentObj);
-                      actions.appendChild(delBtn);
+                      adminActions.appendChild(delBtn);
 
                       // Beantworten
                       const replyBtn = document.createElement('button');
                       replyBtn.textContent = 'Antwort';
-                      replyBtn.style.fontSize = '0.8em';
                       replyBtn.onclick = () => respondToComment(event.id, commentObj);
-                      actions.appendChild(replyBtn);
+                      adminActions.appendChild(replyBtn);
 
-                      commentItem.appendChild(actions);
+                      commentItem.appendChild(adminActions);
                   }
 
                   commentList.appendChild(commentItem);
@@ -771,7 +771,6 @@ const firebaseConfig = {
 
               commentSection.appendChild(commentList);
               eventDiv.appendChild(commentSection);
-              // ----------------------------------------
 
               eventContainer.appendChild(eventDiv);
           });
@@ -943,7 +942,7 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Nutzer meldet sich für Event an ==========
+      // ========== Bestätigen / Teilnehmen an Event ==========
       async function confirmForEvent(eventId) {
           if (!loggedInUser) {
               showNotification('Bitte zuerst einloggen.', 'error');
@@ -961,7 +960,7 @@ const firebaseConfig = {
           }
       }
 
-      // ========== Name aus Event entfernen ==========
+      // ========== Namen entfernen (Admin) ==========
       async function removeName(eventId, name) {
           if (!canRemove) return;
           const eventDocRef = doc(db, "events", eventId);
@@ -976,9 +975,7 @@ const firebaseConfig = {
           }
       }
 
-      // =========================================
-      // ========== Kommentare ===================
-      // =========================================
+      // ========== Kommentare ==========
 
       // Kommentar hinzufügen
       async function addComment(eventId, inputElem) {
@@ -996,10 +993,9 @@ const firebaseConfig = {
               return;
           }
 
-          // Neues Kommentar-Objekt
           const newComment = {
-              id: String(Date.now()), // einfache ID
-              user: loggedInUser,     // Anzeigename
+              id: String(Date.now()),
+              user: loggedInUser,
               text: text,
               adminReply: '',
               timestamp: new Date().toISOString(),
@@ -1019,14 +1015,13 @@ const firebaseConfig = {
           }
       }
 
-      // Kommentar entfernen (nur Admin)
+      // Kommentar löschen (Admin)
       async function removeComment(eventId, commentObj) {
           if (!canRemove) return;
           if (!confirm('Kommentar wirklich löschen?')) return;
 
           try {
               const eventDocRef = doc(db, "events", eventId);
-              // remove altes Objekt
               await updateDoc(eventDocRef, {
                   comments: arrayRemove(commentObj)
               });
@@ -1037,11 +1032,11 @@ const firebaseConfig = {
           }
       }
 
-      // Kommentar beantworten (nur Admin)
+      // Kommentar beantworten (Admin)
       async function respondToComment(eventId, commentObj) {
           if (!canRemove) return;
           const reply = prompt("Antwort des Admins:", commentObj.adminReply || "");
-          if (reply === null) return; // Abbruch
+          if (reply === null) return;
 
           const updatedComment = {
               ...commentObj,
@@ -1050,11 +1045,11 @@ const firebaseConfig = {
 
           try {
               const eventDocRef = doc(db, "events", eventId);
-              // Altes entfernen
+              // altes Objekt entfernen
               await updateDoc(eventDocRef, {
                   comments: arrayRemove(commentObj)
               });
-              // Neues mit Admin-Antwort einfügen
+              // neues Objekt einfügen
               await updateDoc(eventDocRef, {
                   comments: arrayUnion(updatedComment)
               });
@@ -1071,8 +1066,6 @@ const firebaseConfig = {
               showNotification('Bitte erst einloggen, um zu liken.', 'error');
               return;
           }
-
-          // Wir arbeiten mit E-Mail als eindeutiges Kennzeichen
           const userEmail = loggedInEmail || loggedInUser;
           const newLikes = Array.isArray(commentObj.likes) ? [...commentObj.likes] : [];
 
@@ -1096,11 +1089,10 @@ const firebaseConfig = {
               await updateDoc(eventDocRef, {
                   comments: arrayRemove(commentObj)
               });
-              // Aktualisiertes Objekt einfügen
+              // Neues einfügen
               await updateDoc(eventDocRef, {
                   comments: arrayUnion(updatedComment)
               });
-              // Keine Fehlermeldung => Erfolg
           } catch (err) {
               console.error('Fehler beim Liken:', err);
               showNotification('Fehler beim Liken: ' + err.message, 'error');
@@ -1129,7 +1121,6 @@ const firebaseConfig = {
               return;
           }
 
-          // Persistenz wählen
           const persistenceType = staySignedIn ? browserLocalPersistence : browserSessionPersistence;
           try {
               await setPersistence(auth, persistenceType);
@@ -1139,10 +1130,10 @@ const firebaseConfig = {
 
               // Admin-Check
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
-
               // displayName-Fallback
               loggedInUser = user.displayName || user.email;
               loggedInEmail = user.email;
+
               showNotification(`${loggedInUser} ist eingeloggt.`, 'success');
               updateUIAfterLogin();
           } catch (error) {
@@ -1165,8 +1156,6 @@ const firebaseConfig = {
           try {
               const userCredential = await createUserWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
-
-              // displayName setzen
               await updateProfile(user, { displayName: username });
               showNotification('Registrierung erfolgreich. Bitte logge dich jetzt ein.', 'success');
           } catch (error) {
@@ -1180,7 +1169,6 @@ const firebaseConfig = {
           if (user) {
               loggedInUser = user.displayName || user.email;
               loggedInEmail = user.email;
-              // Admin-Check
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
               updateUIAfterLogin();
           } else {
@@ -1203,7 +1191,7 @@ const firebaseConfig = {
           // Footer-Logout anzeigen
           document.getElementById('logoutButton').style.display = 'inline-block';
 
-          // Admin-Bereich einblenden
+          // Admin-Bereich
           document.getElementById('adminSection').style.display = canRemove ? 'block' : 'none';
       }
 
@@ -1214,9 +1202,7 @@ const firebaseConfig = {
           document.getElementById('welcomeUser').textContent = 'Willkommen!';
           document.getElementById('welcomeUser').style.display = 'none';
 
-          // Footer-Logout ausblenden
           document.getElementById('logoutButton').style.display = 'none';
-
           document.getElementById('adminSection').style.display = 'none';
       }
 
@@ -1237,24 +1223,6 @@ const firebaseConfig = {
           document.getElementById('registerButton').addEventListener('click', registerWithEmail);
           document.getElementById('logoutButton').addEventListener('click', logout);
 
-          // Header/Footer beim Scrollen ausblenden
-          let lastScrollTop = 0;
-          window.addEventListener('scroll', function() {
-            const st = window.pageYOffset || document.documentElement.scrollTop;
-            const header = document.querySelector('header');
-            const footer = document.querySelector('footer');
-            if (st > lastScrollTop) {
-              // scrolling down -> ausblenden
-              header.style.transform = 'translateY(-100%)';
-              footer.style.transform = 'translateY(100%)';
-            } else {
-              // scrolling up -> einblenden
-              header.style.transform = 'translateY(0)';
-              footer.style.transform = 'translateY(0)';
-            }
-            lastScrollTop = st <= 0 ? 0 : st;
-          }, false);
-
           console.log('Skript erfolgreich geladen und initialisiert.');
       });
 
@@ -1265,6 +1233,7 @@ const firebaseConfig = {
       window.removeName = removeName;
       window.confirmForEvent = confirmForEvent;
       window.exportCSV = exportCSV;
+      window.addComment = addComment;
       window.removeComment = removeComment;
       window.respondToComment = respondToComment;
       window.toggleLike = toggleLike;
