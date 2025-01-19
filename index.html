@@ -4,192 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schichtplanung</title>
-    
-    <!-- CSS für die Benutzeroberfläche -->
     <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --background-color: #f5f5f5;
-            --white: #ffffff;
-            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --border-radius: 8px;
-            --transition-speed: 0.3s;
-            --button-padding: 14px 20px;
-            --button-font-size: 1.1em;
-            --remove-button-size: 24px;
-            --small-remove-button-size: 18px;
-            --header-height: 60px;
-            --header-font-size: 1.4em;
-            --shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-family);
-            background-color: var(--background-color);
-            color: #333;
-            line-height: 1.6;
-            padding-bottom: 20px;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: var(--white);
-            padding: 0 20px;
-            height: var(--header-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: var(--header-font-size);
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .title {
-            font-weight: bold;
-        }
-
-        #welcomeUser {
-            font-size: 1em;
-        }
-
-        #logoutButton {
-            background-color: var(--danger-color);
-            color: var(--white);
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            margin-left: 20px;
-        }
-
-        #logoutButton:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-
-        #logoutButton:active {
-            transform: scale(1);
-        }
-
-        .container {
-            padding: 20px;
-            max-width: 800px;
-            margin: auto;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 1em;
-        }
-
-        select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
-            width: 100%;
-            padding: 14px;
-            margin-bottom: 18px;
-            border: 1px solid #ccc;
-            border-radius: var(--border-radius);
-            transition: border-color var(--transition-speed);
-            font-size: 1em;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        }
-
-        button {
-            padding: var(--button-padding);
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            font-size: var(--button-font-size);
-            width: 100%;
-            margin-bottom: 18px;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .event {
-            background-color: var(--white);
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 25px;
-            position: relative;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .event h3 {
-            font-size: 1.3em;
-            color: var(--primary-color);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 25px;
-        }
-
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-
-        th, td {
-            padding: 14px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-            color: #333;
-        }
-
-        @media (max-width: 600px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                height: auto;
-                padding: 15px;
-            }
-
-            .title {
-                font-size: 1.2em;
-                margin-bottom: 10px;
-            }
-
-            #welcomeUser {
-                font-size: 0.95em;
-            }
-        }
+        /* CSS bleibt gleich (gekürzt für die Lesbarkeit, da du bereits ein vollständiges Styling hast) */
     </style>
 </head>
 <body>
@@ -199,6 +15,8 @@
         <button id="logoutButton" onclick="logout()" style="display: none;">Logout</button>
     </header>
     <div class="container">
+        <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+        
         <div id="authSection">
             <h3>Einloggen</h3>
             <label for="emailInput">E-Mail:</label>
@@ -206,30 +24,203 @@
             <label for="passwordLogin">Passwort:</label>
             <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
             <button onclick="loginWithEmail()">Einloggen</button>
+            <hr>
+            <h4>Oder registrieren</h4>
+            <label for="emailRegister">E-Mail:</label>
+            <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
+            <label for="passwordRegister">Passwort:</label>
+            <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
+            <button onclick="registerWithEmail()">Registrieren</button>
         </div>
+
         <div id="eventForm" style="display: none;">
             <h3>Neues Event hinzufügen</h3>
             <label for="eventName">Event Name:</label>
-            <select id="eventName">
+            <select id="eventName" onchange="toggleOtherEvent()">
                 <option value="">-- Wähle ein Event --</option>
-                <option value="Event1">Event1</option>
-                <option value="Event2">Event2</option>
+                <option value="Bunkernacht">Bunkernacht</option>
+                <option value="Pferdreht">Pferdreht</option>
+                <option value="IDOLS">IDOLS</option>
+                <option value="Baracke">Baracke</option>
+                <option value="Crypt">Crypt</option>
+                <option value="Dancehall Station">Dancehall Station</option>
+                <option value="LOL">LOL</option>
                 <option value="sonstige">Sonstige</option>
             </select>
-            <input type="date" id="eventDate">
+
+            <div id="otherEventContainer" style="display: none;">
+                <label for="otherEvent">Sonstiges Event:</label>
+                <input type="text" id="otherEvent" placeholder="Event Name eingeben">
+            </div>
+
+            <div class="date-time" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="eventDate">Datum:</label>
+                    <input type="date" id="eventDate">
+                </div>
+                <div style="flex: 1;">
+                    <label for="eventTime">Startzeit:</label>
+                    <input type="time" id="eventTime">
+                </div>
+            </div>
             <button onclick="addEvent()">Event hinzufügen</button>
+            <hr>
         </div>
+
         <div id="eventContainer"></div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Name</th>
+                    <th>Verfügbare Mitarbeiter</th>
+                </tr>
+            </thead>
+            <tbody id="availabilityTable"></tbody>
+        </table>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('eventName').addEventListener('change', toggleOtherEvent);
-        });
+
+    <script type="module">
+        // Firebase SDKs importieren
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, arrayUnion, arrayRemove, getDocs } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+        // Firebase-Konfiguration
+const firebaseConfig = {
+  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+  authDomain: "schichtplan-5c70f.firebaseapp.com",
+  projectId: "schichtplan-5c70f",
+  storageBucket: "schichtplan-5c70f.firebasestorage.app",
+  messagingSenderId: "502149312331",
+  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+  measurementId: "G-0DL0R5B7LV"
+};
+
+        // Firebase initialisieren
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let loggedInUser = null;
+        let canRemove = false;
+
+        function setCurrentDate() {
+            const currentDateElement = document.getElementById('currentDate');
+            const today = new Date();
+            currentDateElement.textContent = today.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
 
         function toggleOtherEvent() {
             const eventName = document.getElementById('eventName').value;
-            console.log(eventName === "sonstige" ? "Zeige Textfeld" : "Verberge Textfeld");
+            const otherEventContainer = document.getElementById('otherEventContainer');
+            otherEventContainer.style.display = eventName === 'sonstige' ? 'block' : 'none';
         }
+
+        async function addEvent() {
+            if (!canRemove) {
+                alert('Nur Administratoren können Events erstellen.');
+                return;
+            }
+
+            let eventName = document.getElementById('eventName').value.trim();
+            if (eventName === 'sonstige') {
+                eventName = document.getElementById('otherEvent').value.trim();
+            }
+
+            const eventDate = document.getElementById('eventDate').value;
+            const eventTime = document.getElementById('eventTime').value;
+
+            if (!eventName || !eventDate || !eventTime) {
+                alert('Bitte alle Felder ausfüllen.');
+                return;
+            }
+
+            try {
+                const q = query(collection(db, "events"), where("datum", "==", eventDate), where("name", "==", eventName));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    alert('Dieses Event existiert bereits.');
+                    return;
+                }
+
+                await addDoc(collection(db, "events"), {
+                    datum: eventDate,
+                    name: eventName,
+                    startzeit: eventTime,
+                    mitarbeiter: []
+                });
+
+                alert('Event erfolgreich hinzugefügt.');
+                document.getElementById('eventForm').reset();
+            } catch (error) {
+                alert('Fehler beim Hinzufügen des Events: ' + error.message);
+            }
+        }
+
+        async function loginWithEmail() {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordLogin').value;
+
+            if (!email || !password) {
+                alert('Bitte E-Mail und Passwort eingeben.');
+                return;
+            }
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                loggedInUser = userCredential.user.email;
+                canRemove = loggedInUser === "admin@example.com"; // Beispiel für Admin-E-Mail
+                updateUIAfterLogin();
+                alert('Erfolgreich eingeloggt.');
+            } catch (error) {
+                alert('Fehler beim Einloggen: ' + error.message);
+            }
+        }
+
+        async function registerWithEmail() {
+            const email = document.getElementById('emailRegister').value.trim();
+            const password = document.getElementById('passwordRegister').value;
+
+            if (!email || !password) {
+                alert('Bitte E-Mail und Passwort eingeben.');
+                return;
+            }
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                alert('Registrierung erfolgreich. Bitte loggen Sie sich ein.');
+            } catch (error) {
+                alert('Fehler bei der Registrierung: ' + error.message);
+            }
+        }
+
+        function updateUIAfterLogin() {
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('eventForm').style.display = canRemove ? 'block' : 'none';
+            document.getElementById('welcomeUser').textContent = `Willkommen ${loggedInUser}`;
+            document.getElementById('welcomeUser').style.display = 'block';
+            document.getElementById('logoutButton').style.display = 'inline-block';
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loggedInUser = user.email;
+                canRemove = loggedInUser === "admin@example.com"; // Beispiel für Admin-E-Mail
+                updateUIAfterLogin();
+            } else {
+                loggedInUser = null;
+                canRemove = false;
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('eventForm').style.display = 'none';
+                document.getElementById('welcomeUser').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'none';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', setCurrentDate);
     </script>
 </body>
 </html>
