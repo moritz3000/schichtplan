@@ -46,8 +46,10 @@
             color: #333;
             line-height: 1.6;
             padding-bottom: 60px; /* Platz für Footer */
+            margin: 0;
         }
 
+        /* HEADER */
         header {
             background-color: var(--primary-color);
             color: var(--white);
@@ -58,9 +60,12 @@
             justify-content: space-between;
             font-size: var(--header-font-size);
             box-shadow: var(--shadow);
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
+            transition: transform 0.3s ease; /* Für das Ein-/Ausblenden per transform */
         }
 
         .title {
@@ -73,8 +78,11 @@
             margin-right: 10px;
         }
 
+        /* SCROLL-TRIGGER: header versteckt sich bei Scroll down, wir nutzen JavaScript unten */
+
+        /* CONTAINER */
         .container {
-            padding: 20px 15px;
+            padding: 80px 15px 20px; /* 80px top, damit der Inhalt nicht unter dem Header liegt */
             max-width: 800px;
             margin: auto;
         }
@@ -86,7 +94,7 @@
             font-size: 1em;
         }
 
-        select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
+        select, input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="time"], textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 16px;
@@ -208,6 +216,12 @@
             border-radius: 50%;
         }
 
+        hr {
+            border: none;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+
         /* Kommentar-Bereich im Event */
         .comment-section {
             margin-top: 10px;
@@ -247,11 +261,31 @@
             display: flex;
             gap: 5px;
         }
+        .comment-meta {
+            font-size: 0.8em;
+            color: #888;
+            margin-left: 6px;
+        }
 
-        hr {
+        .like-container {
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            margin-top: 4px;
+        }
+        .like-btn {
             border: none;
-            border-top: 1px solid #ddd;
-            margin: 20px 0;
+            background: none;
+            cursor: pointer;
+            color: #e53939; /* Herz-Farbe */
+            font-size: 1.2em;
+            transition: transform 0.2s;
+        }
+        .like-btn:hover {
+            transform: scale(1.2);
+        }
+        .like-count {
+            font-size: 0.9em;
         }
 
         /* Admin-Bereich für Tabelle */
@@ -282,7 +316,7 @@
             color: #333;
         }
 
-        /* Footer mit Logout-Button (kleiner) */
+        /* FOOTER (mit Logout-Button) */
         footer {
             position: fixed;
             bottom: 0;
@@ -294,6 +328,7 @@
             align-items: center;
             padding: 8px;
             box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
         #logoutButton {
             width: auto; 
@@ -303,7 +338,6 @@
             margin: 0;
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -311,21 +345,13 @@
                 height: auto;
                 padding: 15px;
             }
-
             .title {
                 font-size: 1.4em;
                 margin-bottom: 10px;
             }
-
-            #welcomeUser {
-                font-size: 1em;
-                margin-bottom: 10px;
-            }
-
             .event {
                 padding: 16px;
             }
-
             .remove-event {
                 top: 10px;
                 right: 10px;
@@ -333,17 +359,14 @@
                 height: 20px;
                 font-size: 0.9em;
             }
-
             button {
                 padding: 12px 18px;
                 font-size: 1em;
             }
-
             .name-item {
                 padding: 6px 10px;
                 font-size: 0.85em;
             }
-
             .remove {
                 width: 16px;
                 height: 16px;
@@ -370,21 +393,19 @@
             opacity: 0.95;
             transition: opacity 0.5s ease-in-out;
         }
-
         .notification-error {
             background-color: #dc3545; /* Fehler */
         }
-
         .notification-info {
             background-color: #17a2b8; /* Info */
         }
     </style>
 </head>
 <body>
+    <!-- Header wird per JavaScript ausgeblendet beim Scrollen -->
     <header>
         <div class="title">Goethebunker Schichtplanung</div>
         <div id="welcomeUser" style="display: none;">Willkommen!</div>
-        <!-- Logout-Button wurde entfernt und in den Footer verschoben -->
     </header>
 
     <div id="notification"></div> <!-- Benachrichtigungsbereich -->
@@ -484,7 +505,7 @@
         </div>
     </div>
 
-    <!-- Footer mit kleinem Logout-Button -->
+    <!-- Footer mit Logout-Button (versteckt sich beim Scrollen) -->
     <footer>
         <button id="logoutButton" style="display:none;">Logout</button>
     </footer>
@@ -537,8 +558,9 @@ const firebaseConfig = {
       const auth = getAuth(app);
       
       let loggedInUser = null;
+      let loggedInEmail = null; // Für Likes eindeutig
       let canRemove = false; // Admin-Rechte
-      let allEvents = [];    // Wird für CSV-Export genutzt
+      let allEvents = [];    // CSV-Export
 
       // ======== Anzeige: heutiges Datum im Header ========
       function setCurrentDate() {
@@ -559,6 +581,13 @@ const firebaseConfig = {
       function formatTime(timeStr) {
           if (!timeStr) return '';
           return timeStr;
+      }
+
+      // Kompakte Zeit für Kommentare (z. B. 19.01.2025, 14:23)
+      function formatDateTime(isoString) {
+          if (!isoString) return '';
+          const d = new Date(isoString);
+          return d.toLocaleString('de-DE'); // z.B. "19.1.2025, 14:23:05"
       }
 
       // ======== Benachrichtigungen anzeigen ========
@@ -669,11 +698,18 @@ const firebaseConfig = {
                   const commentItem = document.createElement('div');
                   commentItem.className = 'comment-item';
 
-                  // User + Text
+                  // User + Datum
                   const userEl = document.createElement('div');
                   userEl.className = 'comment-user';
                   userEl.textContent = commentObj.user;
 
+                  // Datum/Uhrzeit
+                  const metaEl = document.createElement('span');
+                  metaEl.className = 'comment-meta';
+                  metaEl.textContent = `(${formatDateTime(commentObj.timestamp)})`;
+                  userEl.appendChild(metaEl);
+
+                  // Kommentar-Text
                   const textEl = document.createElement('div');
                   textEl.className = 'comment-text';
                   textEl.textContent = commentObj.text;
@@ -688,6 +724,25 @@ const firebaseConfig = {
                       replyEl.textContent = "Antwort vom Admin: " + commentObj.adminReply;
                       commentItem.appendChild(replyEl);
                   }
+
+                  // Like-Bereich
+                  const likeContainer = document.createElement('div');
+                  likeContainer.className = 'like-container';
+
+                  const likeBtn = document.createElement('button');
+                  likeBtn.className = 'like-btn';
+                  likeBtn.textContent = '♥';
+                  likeBtn.title = 'Kommentar liken';
+                  likeBtn.onclick = () => toggleLike(event.id, commentObj);
+
+                  const likeCount = document.createElement('span');
+                  likeCount.className = 'like-count';
+                  const likesArray = commentObj.likes || [];
+                  likeCount.textContent = String(likesArray.length);
+
+                  likeContainer.appendChild(likeBtn);
+                  likeContainer.appendChild(likeCount);
+                  commentItem.appendChild(likeContainer);
 
                   // Aktionen (Löschen/Antworten) nur für Admin
                   if (canRemove) {
@@ -715,7 +770,6 @@ const firebaseConfig = {
               });
 
               commentSection.appendChild(commentList);
-
               eventDiv.appendChild(commentSection);
               // ----------------------------------------
 
@@ -857,7 +911,7 @@ const firebaseConfig = {
                   name: eventName,
                   startzeit: eventTime,
                   mitarbeiter: [],
-                  comments: [] // Neues Feld für Kommentare
+                  comments: [] // Array für Kommentare
               });
               showNotification('Event hinzugefügt.');
 
@@ -942,12 +996,14 @@ const firebaseConfig = {
               return;
           }
 
-          // Kommt in ein Objekt: (id, user, text, adminReply)
+          // Neues Kommentar-Objekt
           const newComment = {
               id: String(Date.now()), // einfache ID
-              user: loggedInUser,
+              user: loggedInUser,     // Anzeigename
               text: text,
-              adminReply: ''
+              adminReply: '',
+              timestamp: new Date().toISOString(),
+              likes: []
           };
 
           try {
@@ -970,7 +1026,7 @@ const firebaseConfig = {
 
           try {
               const eventDocRef = doc(db, "events", eventId);
-              // Ersetzt den Arrayeintrag um old-Objekt zu entfernen
+              // remove altes Objekt
               await updateDoc(eventDocRef, {
                   comments: arrayRemove(commentObj)
               });
@@ -985,9 +1041,8 @@ const firebaseConfig = {
       async function respondToComment(eventId, commentObj) {
           if (!canRemove) return;
           const reply = prompt("Antwort des Admins:", commentObj.adminReply || "");
-          if (reply === null) return; // Abbrechen
+          if (reply === null) return; // Abbruch
 
-          // Wir entfernen das alte Objekt und fügen ein neues hinzu
           const updatedComment = {
               ...commentObj,
               adminReply: reply
@@ -995,9 +1050,11 @@ const firebaseConfig = {
 
           try {
               const eventDocRef = doc(db, "events", eventId);
+              // Altes entfernen
               await updateDoc(eventDocRef, {
                   comments: arrayRemove(commentObj)
               });
+              // Neues mit Admin-Antwort einfügen
               await updateDoc(eventDocRef, {
                   comments: arrayUnion(updatedComment)
               });
@@ -1005,6 +1062,48 @@ const firebaseConfig = {
           } catch (err) {
               console.error('Fehler beim Beantworten:', err);
               showNotification('Fehler beim Beantworten: ' + err.message, 'error');
+          }
+      }
+
+      // Like togglen
+      async function toggleLike(eventId, commentObj) {
+          if (!loggedInUser) {
+              showNotification('Bitte erst einloggen, um zu liken.', 'error');
+              return;
+          }
+
+          // Wir arbeiten mit E-Mail als eindeutiges Kennzeichen
+          const userEmail = loggedInEmail || loggedInUser;
+          const newLikes = Array.isArray(commentObj.likes) ? [...commentObj.likes] : [];
+
+          if (newLikes.includes(userEmail)) {
+              // already liked -> entfernen
+              const idx = newLikes.indexOf(userEmail);
+              newLikes.splice(idx, 1);
+          } else {
+              // noch nicht geliked -> hinzufügen
+              newLikes.push(userEmail);
+          }
+
+          const updatedComment = {
+              ...commentObj,
+              likes: newLikes
+          };
+
+          try {
+              const eventDocRef = doc(db, "events", eventId);
+              // Altes Objekt entfernen
+              await updateDoc(eventDocRef, {
+                  comments: arrayRemove(commentObj)
+              });
+              // Aktualisiertes Objekt einfügen
+              await updateDoc(eventDocRef, {
+                  comments: arrayUnion(updatedComment)
+              });
+              // Keine Fehlermeldung => Erfolg
+          } catch (err) {
+              console.error('Fehler beim Liken:', err);
+              showNotification('Fehler beim Liken: ' + err.message, 'error');
           }
       }
 
@@ -1038,11 +1137,12 @@ const firebaseConfig = {
               const userCredential = await signInWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
 
-              // Admin-Check (Beispiel: E-Mail)
+              // Admin-Check
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
 
               // displayName-Fallback
               loggedInUser = user.displayName || user.email;
+              loggedInEmail = user.email;
               showNotification(`${loggedInUser} ist eingeloggt.`, 'success');
               updateUIAfterLogin();
           } catch (error) {
@@ -1079,11 +1179,13 @@ const firebaseConfig = {
       onAuthStateChanged(auth, (user) => {
           if (user) {
               loggedInUser = user.displayName || user.email;
+              loggedInEmail = user.email;
               // Admin-Check
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de');
               updateUIAfterLogin();
           } else {
               loggedInUser = null;
+              loggedInEmail = null;
               canRemove = false;
               updateUIAfterLogout();
           }
@@ -1135,6 +1237,24 @@ const firebaseConfig = {
           document.getElementById('registerButton').addEventListener('click', registerWithEmail);
           document.getElementById('logoutButton').addEventListener('click', logout);
 
+          // Header/Footer beim Scrollen ausblenden
+          let lastScrollTop = 0;
+          window.addEventListener('scroll', function() {
+            const st = window.pageYOffset || document.documentElement.scrollTop;
+            const header = document.querySelector('header');
+            const footer = document.querySelector('footer');
+            if (st > lastScrollTop) {
+              // scrolling down -> ausblenden
+              header.style.transform = 'translateY(-100%)';
+              footer.style.transform = 'translateY(100%)';
+            } else {
+              // scrolling up -> einblenden
+              header.style.transform = 'translateY(0)';
+              footer.style.transform = 'translateY(0)';
+            }
+            lastScrollTop = st <= 0 ? 0 : st;
+          }, false);
+
           console.log('Skript erfolgreich geladen und initialisiert.');
       });
 
@@ -1147,6 +1267,7 @@ const firebaseConfig = {
       window.exportCSV = exportCSV;
       window.removeComment = removeComment;
       window.respondToComment = respondToComment;
+      window.toggleLike = toggleLike;
     </script>
 </body>
 </html>
