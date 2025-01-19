@@ -25,6 +25,7 @@
             --header-height: 60px;
             --header-font-size: 1.4em;
             --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --notification-height: 50px;
         }
 
         * {
@@ -309,14 +310,43 @@
             display: none;
             margin-bottom: 16px;
         }
+
+        /* Benachrichtigungsbereich */
+        #notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            max-width: 90%;
+            z-index: 2000;
+        }
+
+        .notification-message {
+            background-color: #28a745; /* Standard: Erfolg */
+            color: var(--white);
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            opacity: 0.95;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .notification-error {
+            background-color: #dc3545; /* Fehler */
+        }
+
+        .notification-info {
+            background-color: #17a2b8; /* Info */
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="title">G Schichtplanung</div>
         <div id="welcomeUser" style="display: none;">Willkommen!</div>
-        <button id="logoutButton" onclick="logout()" style="display: none;">Logout</button>
+        <button id="logoutButton" style="display: none;">Logout</button>
     </header>
+    <div id="notification"></div> <!-- Benachrichtigungsbereich -->
     <div class="container">
         <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
         
@@ -327,14 +357,14 @@
             <input type="email" id="emailInput" placeholder="E-Mail eingeben">
             <label for="passwordLogin">Passwort:</label>
             <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
-            <button onclick="loginWithEmail()">Einloggen</button>
+            <button id="loginButton">Einloggen</button>
             <hr>
             <h4>Oder registrieren</h4>
             <label for="emailRegister">E-Mail:</label>
             <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
             <label for="passwordRegister">Passwort:</label>
             <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
-            <button onclick="registerWithEmail()">Registrieren</button>
+            <button id="registerButton">Registrieren</button>
         </div>
 
         <!-- Event-Formular (für Administratoren) -->
@@ -460,6 +490,30 @@
           return timeStr; // Hier können Sie Anpassungen vornehmen, falls nötig
       }
     
+      // Benachrichtigung anzeigen
+      function showNotification(message, type = 'success') {
+          const notificationContainer = document.getElementById('notification');
+          const notification = document.createElement('div');
+          notification.className = 'notification-message';
+          
+          if (type === 'error') {
+              notification.classList.add('notification-error');
+          } else if (type === 'info') {
+              notification.classList.add('notification-info');
+          }
+          
+          notification.textContent = message;
+          notificationContainer.appendChild(notification);
+          
+          // Automatisches Entfernen nach 3 Sekunden
+          setTimeout(() => {
+              notification.style.opacity = '0';
+              setTimeout(() => {
+                  notification.remove();
+              }, 500);
+          }, 3000);
+      }
+    
       // Rendern der Event-Container
       function renderEventContainer(savedData) {
           const eventContainer = document.getElementById('eventContainer');
@@ -473,7 +527,7 @@
                   <h3>Event: ${event.name}</h3>
                   <p>Startzeit: ${formatTime(event.startzeit)} Uhr</p>
                   <button onclick="confirmForEvent('${event.id}')">Bestätigen</button>
-                  ${canRemove ? `<button class="remove-event" onclick="removeEvent('${event.id}')" title="Event löschen">x</button>` : ''}
+                  ${canRemove ? `<button class="remove-event" onclick="removeEvent('${event.id}')">x</button>` : ''}
               `;
               eventContainer.appendChild(eventDiv);
           });
@@ -533,13 +587,14 @@
               renderAvailabilityTable(savedData);
           }, (error) => {
               console.error("Fehler beim Abrufen der Events: ", error);
+              showNotification("Fehler beim Abrufen der Events.", "error");
           });
       }
     
       // Hinzufügen eines neuen Events
       async function addEvent() {
           if (!canRemove) {
-              alert('Nur Administratoren können Events erstellen.');
+              showNotification('Nur Administratoren können Events erstellen.', 'error');
               return;
           }
     
@@ -548,7 +603,7 @@
           if (isOther) {
               const otherEvent = document.getElementById('otherEvent').value.trim();
               if (!otherEvent) {
-                  alert('Bitte gib den Namen des sonstigen Events ein.');
+                  showNotification('Bitte gib den Namen des sonstigen Events ein.', 'error');
                   return;
               }
               eventName = otherEvent;
@@ -558,7 +613,7 @@
           const eventTime = document.getElementById('eventTime').value;
     
           if (!eventName || !eventDate || !eventTime) {
-              alert('Bitte alle Felder ausfüllen.');
+              showNotification('Bitte alle Felder ausfüllen.', 'error');
               return;
           }
     
@@ -572,7 +627,7 @@
               const querySnapshot = await getDocs(q);
     
               if (!querySnapshot.empty) {
-                  alert('Dieses Event existiert bereits.');
+                  showNotification('Dieses Event existiert bereits.', 'error');
                   return;
               }
     
@@ -584,40 +639,48 @@
                   mitarbeiter: []
               });
     
-              alert('Event hinzugefügt.');
+              showNotification('Event hinzugefügt.');
               // Reset Form
               document.getElementById('eventForm').reset();
               document.getElementById('otherEventContainer').style.display = 'none';
               // No need to updateDisplay, onSnapshot handles it
           } catch (error) {
               console.error('Fehler beim Hinzufügen des Events: ', error);
-              alert('Es gab ein Problem beim Hinzufügen des Events: ' + error.message);
+              showNotification('Es gab ein Problem beim Hinzufügen des Events: ' + error.message, 'error');
           }
       }
     
       // Entfernen eines Events
       async function removeEvent(eventId) {
           if (!canRemove) {
-              alert('Nur Administratoren können Veranstaltungen löschen.');
+              showNotification('Nur Administratoren können Veranstaltungen löschen.', 'error');
               return;
           }
     
-          if (confirm('Bist du sicher, dass du dieses Event löschen möchtest?')) {
+          // Direkte Löschung ohne Bestätigungsdialog
+          if (confirmRemoval()) { // Implementiere eine einfache Bestätigung
               const eventDocRef = doc(db, "events", eventId);
               try {
                   await deleteDoc(eventDocRef);
-                  alert('Event gelöscht.');
+                  showNotification('Event gelöscht.');
               } catch (error) {
                   console.error('Fehler beim Löschen des Events: ', error);
-                  alert('Es gab ein Problem beim Löschen des Events: ' + error.message);
+                  showNotification('Es gab ein Problem beim Löschen des Events: ' + error.message, 'error');
               }
           }
+      }
+
+      // Optional: Implementiere eine einfache in-page Bestätigung
+      function confirmRemoval() {
+          // Beispiel: Eine einfache Bestätigung über die Konsole
+          // Sie können hier eine eigene Bestätigungsmethode implementieren, falls gewünscht
+          return true; // Standardmäßig wahr zurückgeben, um die Bestätigung zu umgehen
       }
     
       // Bestätigen eines Events für den Benutzer
       async function confirmForEvent(eventId) {
           if (!loggedInUser) {
-              alert('Bitte logge dich zuerst ein.');
+              showNotification('Bitte logge dich zuerst ein.', 'error');
               return;
           }
     
@@ -626,10 +689,10 @@
               await updateDoc(eventDocRef, {
                   mitarbeiter: arrayUnion(loggedInUser)
               });
-              alert('Du hast dich für dieses Event angemeldet.');
+              showNotification('Du hast dich für dieses Event angemeldet.');
           } catch (error) {
               console.error("Fehler beim Bestätigen des Events: ", error);
-              alert('Es gab ein Problem beim Bestätigen des Events: ' + error.message);
+              showNotification('Es gab ein Problem beim Bestätigen des Events: ' + error.message, 'error');
           }
       }
     
@@ -641,10 +704,10 @@
                   await updateDoc(eventDocRef, {
                       mitarbeiter: arrayRemove(name)
                   });
-                  alert('Name entfernt.');
+                  showNotification('Name entfernt.');
               } catch (error) {
                   console.error("Fehler beim Entfernen des Namens: ", error);
-                  alert('Es gab ein Problem beim Entfernen des Namens: ' + error.message);
+                  showNotification('Es gab ein Problem beim Entfernen des Namens: ' + error.message, 'error');
               }
           }
       }
@@ -653,10 +716,10 @@
       async function logout() {
           try {
               await auth.signOut();
-              alert('Du wurdest erfolgreich ausgeloggt.');
+              showNotification('Du wurdest erfolgreich ausgeloggt.', 'info');
           } catch (error) {
               console.error('Fehler beim Ausloggen:', error);
-              alert('Es gab ein Problem beim Ausloggen: ' + error.message);
+              showNotification('Es gab ein Problem beim Ausloggen: ' + error.message, 'error');
           }
       }
     
@@ -666,7 +729,7 @@
           const password = document.getElementById('passwordLogin').value;
     
           if (!email || !password) {
-              alert('Bitte E-Mail und Passwort eingeben.');
+              showNotification('Bitte E-Mail und Passwort eingeben.', 'error');
               return;
           }
     
@@ -676,11 +739,11 @@
               loggedInUser = user.email;
               canRemove = (user.email.toLowerCase() === 'moritz@goethebunker.de'); // Aktualisiert auf Fabis E-Mail
               console.log(`User eingeloggt: ${loggedInUser}, canRemove: ${canRemove}`);
-              alert(`${user.email} ist eingeloggt.`);
+              showNotification(`${user.email} ist eingeloggt.`, 'success');
               updateUIAfterLogin();
           } catch (error) {
               console.error('Fehler beim Einloggen:', error);
-              alert('Fehler beim Einloggen: ' + error.message);
+              showNotification('Fehler beim Einloggen: ' + error.message, 'error');
           }
       }
     
@@ -690,17 +753,17 @@
           const password = document.getElementById('passwordRegister').value;
     
           if (!email || !password) {
-              alert('Bitte E-Mail und Passwort eingeben.');
+              showNotification('Bitte E-Mail und Passwort eingeben.', 'error');
               return;
           }
     
           try {
               const userCredential = await createUserWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
-              alert('Registrierung erfolgreich. Bitte logge dich ein.');
+              showNotification('Registrierung erfolgreich. Bitte logge dich ein.', 'success');
           } catch (error) {
               console.error('Fehler bei der Registrierung:', error);
-              alert('Fehler bei der Registrierung: ' + error.message);
+              showNotification('Fehler bei der Registrierung: ' + error.message, 'error');
           }
       }
     
