@@ -32,14 +32,13 @@
       padding-bottom: 60px;
     }
 
-    /* Header kleiner, mittig */
     header {
       background-color: var(--primary-color);
       color: var(--white);
       height: 60px;
       display: flex;
       align-items: center;
-      justify-content: center; /* Text mittig */
+      justify-content: center;
       font-size: 0.95em;
       box-shadow: var(--shadow);
       text-align: center;
@@ -47,7 +46,7 @@
     }
     .title {
       font-weight: bold;
-      font-size: 1em; 
+      font-size: 1em;
     }
 
     #welcomeUser {
@@ -63,7 +62,7 @@
     /* Zurück-Button */
     #backButton {
       background-color: var(--primary-color);
-      color: var(--white);
+      color: #fff;
       border: none;
       border-radius: var(--border-radius);
       padding: var(--button-padding);
@@ -75,7 +74,7 @@
       margin-top: 20px;
     }
 
-    /* Generische Styles für Eingabefelder & Buttons im Seiten-Stil */
+    /* Gemeinsame Styles für input, textarea, button */
     input, select, textarea {
       width: 100%;
       padding: 12px;
@@ -112,12 +111,11 @@
       color: var(--primary-color);
     }
 
-    /* Chat-Bubbles */
     .chat-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-top: 10px; /* extra Abstand zwischen Feld und erstem Kommentar */
+      margin-top: 10px; 
     }
     .chat-bubble {
       position: relative;
@@ -136,14 +134,14 @@
       background-color: #eee;
     }
     .chat-remove-x {
-      position: absolute; 
+      position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      right: -30px; 
-      background: none; 
-      border: none; 
-      font-size: 1em; 
-      color: #999; 
+      right: -30px;
+      background: none;
+      border: none;
+      font-size: 1em;
+      color: #999;
       cursor: pointer;
     }
     .chat-remove-x:hover {
@@ -155,31 +153,21 @@
       width: 100%;
       justify-content: space-between; 
       align-items: center;
-      margin-bottom: 2px; /* minimaler Abstand */
+      margin-bottom: 2px;
     }
-
-    /* Name + Zeit in einer Zeile,
-       Datum/Zeit dezenter und kleiner */
     .chat-meta {
       font-size: 0.75em; 
       color: #888;
       margin-left: 0.3ch;
     }
 
-    /* Like Button */
+    /* Kein Herz-Stil mehr, wir verwenden reinen Text (Like/Unlike) */
     .like-btn {
       border: none; 
       background: none; 
       cursor: pointer;
       font-size: 1em;
       color: #000;
-    }
-    .like-outlined::before {
-      content: "♡";
-    }
-    .like-filled::before {
-      content: "♥";
-      color: #e53939;
     }
 
     .heart-line {
@@ -276,10 +264,8 @@
     <div class="event" id="commentContainer">
       <h3>Kommentare</h3>
 
-      <!-- Kommentare -->
       <div class="chat-list" id="commentList"></div>
 
-      <!-- Eingabe unten -->
       <textarea id="commentInput" rows="2" placeholder="Kommentar..."></textarea>
       <button id="sendCommentBtn">Senden</button>
     </div>
@@ -299,7 +285,7 @@
       getAuth, onAuthStateChanged, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Deine Firebase-Konfiguration
+    // Firebase-Konfiguration
     const firebaseConfig = {
       apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
       authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -316,11 +302,11 @@
     const auth = getAuth(app);
 
     let loggedInUser = null;
-    let canRemove = false;  // Admin?
+    let canRemove = false;
     let currentEventId = null;
-    let unsubDoc = null;
+    let unsubDoc = null; // onSnapshot unsubscribe
 
-    // Notifikation
+    // Notification
     function showNotification(msg, type='success'){
       const container= document.getElementById('notification');
       const div= document.createElement('div');
@@ -335,13 +321,14 @@
       },3000);
     }
 
+    // Zurück
     document.getElementById('backButton').addEventListener('click', ()=>{
       window.location.href='index.html';
     });
 
     function renderDetails(evData){
       let detailHTML="";
-      detailHTML+= `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
+      detailHTML += `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
       if(evData.datum){
         const dObj= new Date(evData.datum);
         const dd= String(dObj.getDate()).padStart(2,'0');
@@ -372,6 +359,7 @@
         document.getElementById('saveInfoBtn').style.display='none';
       }
     }
+
     async function saveInfos(){
       if(!canRemove)return;
       const newVal= document.getElementById('infoInput').value.trim();
@@ -379,7 +367,7 @@
       try{
         await updateDoc(ref,{ importantInfo: newVal });
         showNotification("Wichtige Infos gespeichert");
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Speichern: "+err.message,'error');
       }
     }
@@ -410,7 +398,7 @@
         const header= document.createElement('div');
         header.className='chat-header';
 
-        // Name + Zeit
+        // Datum/Zeit => dd.mm.yy hh:mm
         const dt= new Date(cObj.timestamp);
         const dd= String(dt.getDate()).padStart(2,'0');
         const mm= String(dt.getMonth()+1).padStart(2,'0');
@@ -419,17 +407,16 @@
         const mn= String(dt.getMinutes()).padStart(2,'0');
         const dtStr= `${dd}.${mm}.${yy} ${hh}:${mn}`;
 
+        // "Name Datum"
         const nameSpan= document.createElement('span');
         nameSpan.innerHTML= `<strong>${cObj.user}</strong> <span class="chat-meta">${dtStr}</span>`;
 
-        // Like Button
+        // Like-Button als normaler Text
         const likes= cObj.likes||[];
         const isLiked= likes.includes(loggedInUser);
-
         const likeBtn= document.createElement('button');
         likeBtn.className='like-btn';
-        if(isLiked) likeBtn.classList.add('like-filled');
-        else likeBtn.classList.add('like-outlined');
+        likeBtn.textContent= isLiked ? "Unlike" : "Like"; // normaler Text
         likeBtn.onclick= ()=> toggleLike(cObj);
 
         header.appendChild(nameSpan);
@@ -473,7 +460,7 @@
         await updateDoc(ref,{ comments: arrayUnion(newCmt) });
         document.getElementById('commentInput').value='';
         showNotification("Kommentar hinzugefügt");
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
@@ -485,7 +472,7 @@
       try{
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         showNotification("Nachricht gelöscht");
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Löschen: "+err.message,'error');
       }
     }
@@ -509,7 +496,7 @@
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         // add new
         await updateDoc(ref,{ comments: arrayUnion(updated) });
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
     }
@@ -523,7 +510,6 @@
       }
     }
 
-    // Echtzeit mittels onSnapshot
     function listenToEventDoc(){
       const ref= doc(db,"events", currentEventId);
       if(typeof unsubDoc==='function') unsubDoc();
@@ -542,7 +528,8 @@
       });
     }
 
-    onAuthStateChanged(auth, user=>{
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+    onAuthStateChanged(auth, (user)=>{
       if(user){
         loggedInUser= user.displayName||user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
