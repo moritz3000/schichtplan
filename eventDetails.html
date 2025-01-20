@@ -5,7 +5,7 @@
   <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 
-  <title>Goethebunker Schichtplanung – Event Details</title>
+  <title>Goethebunker Schichtplanung - Übersicht</title>
 
   <style>
     :root {
@@ -211,17 +211,16 @@
   <div class="container">
     <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
 
-    <!-- BEREICH FÜR WICHTIGE INFOS (oberhalb der Kommentar-Sektion) -->
-    <div id="importantInfoSection" style="margin-bottom: 30px;">
-      <h2>Wichtige Infos</h2>
-      <p id="infoText"></p> <!-- Alle sehen den Inhalt hier -->
-
-      <!-- NUR Admin sieht dieses Textfeld + Button -->
-      <textarea id="infoInput" style="display:none;" rows="3" placeholder="Infos eintragen..."></textarea>
+    <!-- NEUER CONTAINER: Wichtige Infos (wie die anderen Container .event) -->
+    <div class="event" id="infoContainer">
+      <h3>Wichtige Infos</h3>
+      <p id="infoText">Hier stehen wichtige Informationen zum Event...</p>
+      <!-- Nur Admin sieht dieses Textarea + Button -->
+      <textarea id="infoInput" rows="3" placeholder="Infos eintragen..." style="display:none;"></textarea>
       <button id="saveInfoBtn" style="display:none;">Speichern</button>
     </div>
 
-    <!-- Kommentarbereich (Chat, o.ä.) -->
+    <!-- Bisheriger Event-Container (Kommentare / etc.) -->
     <div id="eventContainer"></div>
   </div>
 
@@ -234,7 +233,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove
+      getFirestore, doc, getDoc, updateDoc
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged
@@ -260,7 +259,6 @@
     let loggedInUser = null;
     let canRemove = false;  // Admin?
     let currentEventId = null;
-    let eventDataCache = null; // Speichert das aktuell geladene Event
 
     function showNotification(msg,type='success') {
       const notiBox = document.getElementById('notification');
@@ -284,108 +282,80 @@
       el.textContent = d.toLocaleDateString('de-DE', opts);
     }
 
-    // Wichtige Infos laden
-    function renderImportantInfo(evData){
+    // Lädt das Event-Dokument und zeigt es an
+    async function loadEvent() {
+      if(!currentEventId) {
+        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        return;
+      }
+      // Firestore-Dokument "events/currentEventId"
+      const ref= doc(db, "events", currentEventId);
+      const snapshot= await getDoc(ref);
+      if(!snapshot.exists()){
+        document.body.innerHTML= "<p>Event nicht gefunden</p>";
+        return;
+      }
+      const evData= snapshot.data();
+      console.log("Event-Daten:", evData);
+
+      // Wichtige Infos anzeigen
       const infoText= evData.importantInfo || "Noch keine Infos eingetragen";
       document.getElementById('infoText').textContent= infoText;
 
-      // Wenn admin => Textarea + Button einblenden und befüllen
+      // Wenn admin => Textarea + Button
       if(canRemove){
         document.getElementById('infoInput').style.display='block';
         document.getElementById('saveInfoBtn').style.display='inline-block';
         document.getElementById('infoInput').value= infoText;
-      } else {
-        document.getElementById('infoInput').style.display='none';
-        document.getElementById('saveInfoBtn').style.display='none';
       }
+
+      // Hier könntest du auch Kommentare oder sonstige Daten einbauen,
+      // z.B. "renderEventContainer(evData.comments)" etc.
     }
 
-    // Infos speichern
+    // Speichern der "Wichtigen Infos"
     async function saveImportantInfo(){
       if(!canRemove) return;
       const newText= document.getElementById('infoInput').value.trim();
-      try{
+      try {
         const ref= doc(db,"events", currentEventId);
-        await updateDoc(ref, {
-          importantInfo: newText
-        });
-        showNotification("Wichtige Infos gespeichert");
-        // UI aktualisieren
+        await updateDoc(ref, { importantInfo: newText });
+        showNotification("Infos gespeichert.");
         document.getElementById('infoText').textContent= newText || "Noch keine Infos eingetragen";
-      }catch(err){
-        showNotification("Fehler beim Speichern: "+err.message,'error');
+      } catch(err){
+        console.error("Fehler beim Speichern der Infos:", err);
+        showNotification("Fehler: "+err.message,'error');
       }
     }
 
-    // Event laden
-    async function loadEvent(){
-      if(!currentEventId){
-        document.body.innerHTML="<p>Keine Event ID angegeben!</p>";
-        return;
-      }
-      const docRef= doc(db,"events", currentEventId);
-      const snap= await getDoc(docRef);
-      if(!snap.exists()){
-        document.body.innerHTML="<p>Event nicht gefunden.</p>";
-        return;
-      }
-      const evData= snap.data();
-      eventDataCache= evData; // für evtl. Weiterverwendung
-
-      // Wichtige Infos
-      renderImportantInfo(evData);
-
-      // Hier könntest du die Kommentar-Funktion / Chat etc. rendern,
-      // stattdessen nur Demo:
-      renderEvent(evData);
-    }
-
-    // Demo: "renderEvent" - zeigt minimal Infos
-    function renderEvent(evData){
-      const c= document.getElementById('eventContainer');
-      c.innerHTML='';
-
-      // Evtl. Name, Datum, Chat etc.
-      const h3= document.createElement('h3');
-      h3.textContent= evData.name || "Kein Name";
-      c.appendChild(h3);
-
-      // ...
-      // Hier könnte dein Chat / Verfügbarkeiten / etc. hin
-    }
-
-    // Speichere "Kommentare" oder Chat? -> hier nicht gezeigt
-    // ...
-
-    // Admin-löschen? -> ...
-    // ...
-
-    // Auth
-    onAuthStateChanged(auth,(user)=>{
+    // Auth-Listener
+    onAuthStateChanged(auth, user=>{
       if(user){
-        loggedInUser= user.displayName||user.email;
+        loggedInUser= user.displayName || user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
-        console.log("[Auth] user=", loggedInUser, "admin=", canRemove);
+        console.log("Eingeloggt:", loggedInUser, "admin=", canRemove);
 
-        // Lade Event
         loadEvent();
       } else {
-        console.log("[Auth] Ausgeloggt");
         loggedInUser= null;
         canRemove= false;
-        // Evtl. "Bitte einloggen" anzeigen
-        // oder redirect
+        console.log("Nicht eingeloggt");
+        // Optional: redirect "bitte einloggen"
       }
     });
 
     document.addEventListener('DOMContentLoaded', ()=>{
       setCurrentDate();
 
-      // URL param ?id=...
+      // hole ?id=...
       const params= new URLSearchParams(window.location.search);
       currentEventId= params.get('id');
+      if(!currentEventId){
+        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        return;
+      }
 
-      // Save Info Button
+      // Klick-Handler
       document.getElementById('saveInfoBtn').addEventListener('click', saveImportantInfo);
     });
   </script>
