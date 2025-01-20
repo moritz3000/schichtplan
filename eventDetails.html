@@ -29,7 +29,7 @@
       background-color: var(--background-color);
       color: #333;
       margin: 0;
-      padding-bottom: 60px;
+      padding-bottom: 60px; 
     }
 
     header {
@@ -47,18 +47,20 @@
       font-weight: bold;
       font-size: 1.2em;
     }
-    /* Zurück-Link/Button */
+
+    /* Zurück-Button (AUßERHALB header, normaler Button-Stil) */
     #backButton {
-      text-decoration: none;
-      color: var(--white);
-      background-color: #0056b3;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.9em;
+      background-color: var(--primary-color);
+      color: #fff;
       border: none;
-      display: inline-block;
+      border-radius: var(--border-radius);
+      padding: var(--button-padding);
       cursor: pointer;
-      margin-right: 10px;
+      font-size: 1em;
+      margin-bottom: 16px;
+      display: inline-block;
+      text-decoration: none;
+      margin-top: 20px;
     }
 
     #welcomeUser {
@@ -72,7 +74,6 @@
       padding: 20px;
     }
 
-    /* Container-Styles */
     .event {
       background-color: var(--white);
       border: 1px solid #ddd;
@@ -114,7 +115,7 @@
       font-size: 1em;
       margin-bottom: 16px;
     }
-    
+
     /* Chat-Bubbles */
     .chat-list {
       display: flex;
@@ -139,8 +140,9 @@
     }
     .chat-remove-x {
       position: absolute; 
-      top: 6px; 
-      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      right: -30px; /* "rechts in der mitte" */
       background: none; 
       border: none; 
       font-size: 1em; 
@@ -156,12 +158,13 @@
       width: 100%;
       justify-content: space-between; /* Herz rückt nach rechts */
       align-items: center;
-      margin-bottom: 2px; /* engerer Abstand zur Nachricht */
+      margin-bottom: 2px; /* minimaler Abstand */
     }
 
     .chat-meta {
       font-size: 0.8em;
       color: #888;
+      margin-left: 1ch; /* nur 1 Leerzeichen, minimaler Abstand */
     }
 
     .like-btn {
@@ -182,7 +185,7 @@
     .heart-line {
       font-size: 0.75em;
       color: #777;
-      margin-top: 8px; /* mehr Abstand */
+      margin-top: 8px; /* größerer Abstand */
     }
 
     #notification {
@@ -238,23 +241,27 @@
       .chat-bubble {
         max-width: 80%;
       }
+      .chat-remove-x {
+        right: -24px;
+      }
     }
   </style>
 </head>
 
 <body>
   <header>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <a id="backButton" href="index.html">&laquo; Zurück</a>
-      <div class="title">Goethebunker Schichtplanung</div>
-    </div>
+    <div class="title">Goethebunker Schichtplanung</div>
     <div id="welcomeUser" style="display:none;">Willkommen!</div>
   </header>
 
   <div id="notification"></div>
 
   <div class="container">
-    <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+    <!-- Statt Datum: "Bunker Schichtplan" -->
+    <p style="font-size:1.1em; margin-bottom:20px; font-weight:bold;">Bunker Schichtplan</p>
+
+    <!-- Zurück-Button (nicht im Header) -->
+    <button id="backButton" onclick="goBack()">Zurück</button>
 
     <!-- (1) VERANSTALTUNGS-DETAILS -->
     <div class="event" id="detailContainer">
@@ -288,7 +295,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove
+      getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, signOut
@@ -313,6 +320,7 @@
     let loggedInUser = null;
     let canRemove = false;  // Admin?
     let currentEventId = null;
+    let unsubscribeDoc = null; // So we can stop onSnapshot if needed
 
     // Benachrichtigungen
     function showNotification(msg, type='success'){
@@ -329,42 +337,21 @@
       },3000);
     }
 
-    function setCurrentDate(){
-      const el= document.getElementById('currentDate');
-      const d= new Date();
-      const opts={day:'2-digit', month:'2-digit', year:'2-digit', weekday:'long'};
-      el.textContent= d.toLocaleDateString('de-DE', opts);
+    // Go Back
+    function goBack(){
+      window.location.href='index.html';
     }
 
-    // (A) Lade Event
-    async function loadEvent(){
-      if(!currentEventId){
-        document.body.innerHTML= "<p>Keine Event-ID angegeben</p>";
-        return;
-      }
-      const ref= doc(db,"events",currentEventId);
-      const snap= await getDoc(ref);
-      if(!snap.exists()){
-        document.body.innerHTML= "<p>Event nicht gefunden</p>";
-        return;
-      }
-      const evData= snap.data();
-      renderDetails(evData);
-      renderInfos(evData);
-      renderComments(evData.comments||[]);
-    }
-
-    // (1) VERANSTALTUNGS-DETAILS
+    // Render: Details
     function renderDetails(evData){
       let detailHTML="";
-      detailHTML+= `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
-
+      detailHTML += `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
       if(evData.datum){
         const dObj= new Date(evData.datum);
         // Format: DD.MM.YY
-        let dd= String(dObj.getDate()).padStart(2,'0');
-        let mm= String(dObj.getMonth()+1).padStart(2,'0');
-        let yy= String(dObj.getFullYear()%100).padStart(2,'0');
+        const dd= String(dObj.getDate()).padStart(2,'0');
+        const mm= String(dObj.getMonth()+1).padStart(2,'0');
+        const yy= String(dObj.getFullYear()%100).padStart(2,'0');
         detailHTML += `<strong>Datum:</strong> ${dd}.${mm}.${yy}<br/>`;
       }
       if(evData.startzeit){
@@ -378,11 +365,10 @@
       document.getElementById('detailText').innerHTML= detailHTML;
     }
 
-    // (2) WICHTIGE INFOS
+    // Render: Wichtige Infos
     function renderInfos(evData){
-      const infoStr= evData.importantInfo||"Noch keine Infos...";
+      const infoStr= evData.importantInfo || "Noch keine Infos...";
       document.getElementById('infoText').innerHTML= infoStr.replace(/\n/g,'<br>');
-
       if(canRemove){
         document.getElementById('infoInput').style.display='block';
         document.getElementById('saveInfoBtn').style.display='inline-block';
@@ -392,20 +378,20 @@
         document.getElementById('saveInfoBtn').style.display='none';
       }
     }
+
     async function saveInfos(){
       if(!canRemove)return;
       const newVal= document.getElementById('infoInput').value.trim();
-      const ref= doc(db,"events",currentEventId);
+      const ref= doc(db,"events", currentEventId);
       try{
-        await updateDoc(ref,{ importantInfo: newVal });
+        await updateDoc(ref, { importantInfo: newVal });
         showNotification("Wichtige Infos gespeichert");
-        document.getElementById('infoText').innerHTML= newVal.replace(/\n/g,'<br>')||"Noch keine Infos...";
       }catch(err){
-        showNotification("Fehler: "+err.message,'error');
+        showNotification("Fehler beim Speichern: "+err.message,'error');
       }
     }
 
-    // (3) Kommentare (Chat)
+    // Render: Chat
     function renderComments(commentArr){
       // Chronologisch
       const sorted= commentArr.slice().sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
@@ -421,7 +407,6 @@
         if(cObj.user===loggedInUser) bubble.classList.add('me');
         else bubble.classList.add('other');
 
-        // Admin-löschen
         if(canRemove){
           const xBtn= document.createElement('button');
           xBtn.className='chat-remove-x';
@@ -430,39 +415,42 @@
           bubble.appendChild(xBtn);
         }
 
-        // Header (Name + Datum + Zeit + Herz)
+        // Header (Name bold, + Datum, + Zeit => DD.MM.YY HH:MM, + Heart Right)
         const header= document.createElement('div');
         header.className='chat-header';
 
-        const userSpan= document.createElement('span');
-        userSpan.textContent= cObj.user;
+        // Name bold + date/time with only one space
+        const nameSpan= document.createElement('span');
+        nameSpan.innerHTML= `<strong>${cObj.user}</strong> `; // bold name
 
-        // Datum in DD.MM.YY HH:MM 
         const dtObj= new Date(cObj.timestamp);
-        let dd= String(dtObj.getDate()).padStart(2,'0');
-        let mm= String(dtObj.getMonth()+1).padStart(2,'0');
-        let yy= String(dtObj.getFullYear()%100).padStart(2,'0');
-        let hh= String(dtObj.getHours()).padStart(2,'0');
-        let min= String(dtObj.getMinutes()).padStart(2,'0');
+        const dd= String(dtObj.getDate()).padStart(2,'0');
+        const mm= String(dtObj.getMonth()+1).padStart(2,'0');
+        const yy= String(dtObj.getFullYear()%100).padStart(2,'0');
+        const hh= String(dtObj.getHours()).padStart(2,'0');
+        const min= String(dtObj.getMinutes()).padStart(2,'0');
         const dtStr= `${dd}.${mm}.${yy} ${hh}:${min}`;
         
         const metaSpan= document.createElement('span');
         metaSpan.className='chat-meta';
-        metaSpan.textContent= `(${dtStr})`;
+        metaSpan.textContent= dtStr;  // name + ' ' + dt => "Moritz 03.08.23 12:34"
 
+        // Like
         const likeBtn= document.createElement('button');
         likeBtn.className='like-btn';
-        const oldLikes= cObj.likes||[];
-        const isLiked= oldLikes.includes(loggedInUser);
-        likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
+        const likes= cObj.likes||[];
+        const isLiked= likes.includes(loggedInUser);
+        if(isLiked) likeBtn.classList.add('like-filled');
+        else likeBtn.classList.add('like-outlined');
         likeBtn.onclick= ()=> toggleLike(cObj);
 
-        header.appendChild(userSpan);
+        // Append
+        header.appendChild(nameSpan);
         header.appendChild(metaSpan);
         header.appendChild(likeBtn);
         bubble.appendChild(header);
 
-        // Text
+        // Text with line breaks
         const txtDiv= document.createElement('div');
         txtDiv.innerHTML= (cObj.text||"").replace(/\n/g,'<br>');
         bubble.appendChild(txtDiv);
@@ -470,7 +458,7 @@
         // "Dein Kommentar wurde x mal geherzt."
         const heartLine= document.createElement('div');
         heartLine.className='heart-line';
-        heartLine.textContent= `Dein Kommentar wurde ${oldLikes.length} mal geherzt.`;
+        heartLine.textContent= `Dein Kommentar wurde ${likes.length} mal geherzt.`;
         bubble.appendChild(heartLine);
 
         cList.appendChild(bubble);
@@ -482,38 +470,35 @@
         showNotification("Bitte einloggen",'error');
         return;
       }
-      const input= document.getElementById('commentInput');
-      const txt= input.value.trim();
+      const txt= document.getElementById('commentInput').value.trim();
       if(!txt){
         showNotification("Kommentar ist leer",'error');
         return;
       }
-      const newCmt= {
+      const newComm= {
         id: String(Date.now()),
         user: loggedInUser,
         text: txt,
         timestamp: new Date().toISOString(),
-        likes:[]
+        likes: []
       };
-      const ref= doc(db,"events", currentEventId);
+      const ref= doc(db,"events",currentEventId);
       try{
-        await updateDoc(ref,{ comments: arrayUnion(newCmt) });
+        await updateDoc(ref,{ comments: arrayUnion(newComm) });
+        document.getElementById('commentInput').value='';
         showNotification("Kommentar hinzugefügt");
-        input.value='';
-        loadEvent();
       }catch(err){
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
 
     async function removeComment(cObj){
-      if(!canRemove)return;
+      if(!canRemove) return;
       if(!confirm("Nachricht wirklich löschen?")) return;
       const ref= doc(db,"events", currentEventId);
       try{
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         showNotification("Nachricht gelöscht");
-        loadEvent();
       }catch(err){
         showNotification("Fehler beim Löschen: "+err.message,'error');
       }
@@ -521,23 +506,22 @@
 
     async function toggleLike(cObj){
       if(!loggedInUser){
-        showNotification("Bitte einloggen",'error');
+        showNotification("Bitte einloggen zum Liken",'error');
         return;
       }
       const oldLikes= Array.isArray(cObj.likes)? [...cObj.likes]:[];
-      const idx= oldLikes.indexOf(loggedInUser);
-      if(idx>=0){
-        oldLikes.splice(idx,1);
-      } else {
-        oldLikes.push(loggedInUser);
-      }
+      const i= oldLikes.indexOf(loggedInUser);
+      if(i>=0) oldLikes.splice(i,1); 
+      else oldLikes.push(loggedInUser);
+
       const updated= {...cObj, likes: oldLikes};
-      const ref= doc(db,"events", currentEventId);
+      const ref= doc(db,"events",currentEventId);
       try{
+        // remove old
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
+        // add new
         await updateDoc(ref,{ comments: arrayUnion(updated) });
-        loadEvent();
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
     }
@@ -551,27 +535,47 @@
       }
     }
 
-    onAuthStateChanged(auth, user=>{
+    // ECHTZEIT-FUNKTION mit onSnapshot
+    function listenToEventDoc(){
+      const ref= doc(db,"events", currentEventId);
+      // Falls wir bereits ein unsubscribe hatten, rufen wir es vorher auf
+      if(typeof unsubscribeDoc==='function') unsubscribeDoc();
+      unsubscribeDoc= onSnapshot(ref,(snapshot)=>{
+        if(!snapshot.exists()){
+          document.body.innerHTML="<p>Event nicht gefunden</p>";
+          return;
+        }
+        const evData= snapshot.data();
+        // Re-render
+        renderDetails(evData);
+        renderInfos(evData);
+        renderComments(evData.comments||[]);
+      },(err)=>{
+        console.error("onSnapshot Fehler:", err);
+        showNotification("Fehler: "+err.message,'error');
+      });
+    }
+
+    // Auth
+    onAuthStateChanged(auth, (user)=>{
       if(user){
         loggedInUser= user.displayName||user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
-        loadEvent();
+        listenToEventDoc(); // ECHTZEIT statt getDoc
       } else {
         loggedInUser=null;
         canRemove=false;
-        document.body.innerHTML="<p>Bitte logge dich ein.</p>";
+        document.body.innerHTML="<p>Bitte einloggen.</p>";
       }
     });
 
     document.addEventListener('DOMContentLoaded', ()=>{
-      setCurrentDate();
       const params= new URLSearchParams(window.location.search);
       currentEventId= params.get('id');
       if(!currentEventId){
         document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
-      // Buttons
       document.getElementById('saveInfoBtn').addEventListener('click', saveInfos);
       document.getElementById('sendCommentBtn').addEventListener('click', sendComment);
       document.getElementById('logoutButton').addEventListener('click', logout);
