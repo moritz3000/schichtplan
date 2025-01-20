@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Kein Zoomen, Web-App-fähig -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <title>Event-Details - Goethebunker</title>
 
@@ -21,7 +21,7 @@
     .wrapper {
       max-width: 600px;
       width: 100%;
-      margin: 0 auto; /* Zentrieren */
+      margin: 0 auto; /* zentrieren */
     }
 
     a {
@@ -58,7 +58,7 @@
       margin-bottom: 20px;
     }
 
-    /* Buttons ohne Hover-Effekte */
+    /* Buttons ohne Hover-Effekt */
     button {
       padding: 8px 12px;
       background-color: #007bff;
@@ -70,7 +70,7 @@
       margin-top: 6px; 
     }
 
-    /* Kommentarbereich */
+    /* Kommentarbereich (Chat-Layout) */
     .commentSection {
       background: #fafafa;
       border: 1px solid #ccc;
@@ -84,18 +84,94 @@
       gap: 10px;
     }
 
-    .comment-item {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 8px 10px;
+    /* Jede Nachricht als Sprechblase */
+    .chat-bubble {
       position: relative;
-
-      min-width: 160px;
-      max-width: 192px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px 12px;
+      max-width: 280px; /* So passen Name, Datum, Herz in eine Zeile */
       overflow-wrap: break-word;
+      /* Abstand unten */
+      margin-bottom: 4px;
     }
 
+    /* Eigene Nachricht: rechts */
+    .me {
+      align-self: flex-end; 
+      background-color: #d4f7d0; /* oder eine andere helle Farbe */
+    }
+    /* Andere Nachricht: links */
+    .other {
+      align-self: flex-start;
+      background-color: #eee;
+    }
+
+    /* Name + Datum + Herz in einer Zeile */
+    .header-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; 
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .comment-user {
+      font-weight: bold;
+      flex-shrink: 0; /* Name nicht schrumpfen */
+    }
+    .comment-meta {
+      font-size: 0.8em;
+      color: #888;
+      flex-shrink: 0;
+    }
+
+    /* Herz-Button am Ende */
+    .like-btn {
+      border: none; 
+      background: none; 
+      cursor: pointer;
+      font-size: 1em;
+      color: #000;
+    }
+    .like-outlined::before {
+      content: "♡";
+    }
+    .like-filled::before {
+      content: "♥";
+      color: #e53939;
+    }
+
+    /* "Du wurdest x mal geherzt!" in leichtem Grau */
+    .heart-label {
+      display: block;
+      margin-top: 4px;
+      color: #888;
+      font-size: 0.85em;
+    }
+
+    /* Eigener Kommentar-Text + Admin-Reply */
+    .comment-text {
+      margin-bottom: 4px;
+    }
+    .admin-reply {
+      margin-top: 4px;
+      color: #17a2b8;
+      font-weight: bold;
+    }
+
+    /* Admin-Button "Antwort" am unteren Rand */
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .comment-actions button {
+      font-size: 0.8em;
+    }
+
+    /* Admin-Löschen: x oben rechts */
     .comment-remove-x {
       position: absolute; 
       top: 6px; 
@@ -110,59 +186,7 @@
       color: #333;
     }
 
-    .comment-user {
-      font-weight: bold;
-    }
-    .comment-meta {
-      font-size: 0.8em;
-      color: #888;
-      margin-left: 6px;
-    }
-
-    .comment-text {
-      margin-top: 4px;
-    }
-
-    .like-btn {
-      border: none; 
-      background: none; 
-      cursor: pointer;
-      font-size: 1em; 
-      color: #000;
-      margin-left: 6px;
-    }
-    .like-outlined::before {
-      content: "♡";
-    }
-    .like-filled::before {
-      content: "♥";
-      color: #e53939;
-    }
-
-    /* "Du wurdest x mal geherzt" in Grau */
-    .heart-label {
-      display: block;
-      margin-top: 4px;
-      color: #888;
-      font-size: 0.85em;
-    }
-
-    .admin-reply {
-      margin-top: 4px;
-      color: #17a2b8;
-      font-weight: bold;
-    }
-
-    .comment-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-      justify-content: flex-end;
-    }
-    .comment-actions button {
-      font-size: 0.8em;
-    }
-
+    /* Input/textarea moderner */
     input, textarea {
       width: 100%; 
       font-size: 1em;
@@ -173,16 +197,17 @@
       margin-bottom: 6px;
     }
     textarea {
-      resize: none; /* Nicht skalierbar */
+      resize: none;
     }
 
+    /* Für 1-Zeiliges Feld max. 192 px */
     #commentInput {
       width: 192px;
       max-width: 192px;
-      height: auto; 
+      height: auto;
     }
 
-    /* Notification-Bereich */
+    /* Notifikationsbereich */
     #notification {
       position: fixed;
       top: 10px;
@@ -217,16 +242,15 @@
       <h1>Event-Details</h1>
     </div>
 
-    <!-- Event-Container -->
-    <div id="eventContainer" class="eventDetails">
-      <!-- Dynamische Füllung -->
-    </div>
+    <!-- Hauptcontainer -->
+    <div id="eventContainer" class="eventDetails"></div>
 
-    <!-- Kommentar-Bereich -->
+    <!-- Kommentarbereich -->
     <div id="commentSection" class="commentSection" style="display:none;">
       <h3>Kommentare</h3>
       <div class="comment-list" id="commentList"></div>
 
+      <!-- Eingabefeld unter den Kommentaren -->
       <textarea id="commentInput" rows="1" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
       <button id="addCommentButton">Kommentar absenden</button>
     </div>
@@ -243,7 +267,7 @@
       getAuth, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // ========== Firebase-Konfig anpassen! ==========
+    // ========== Deine Firebase-Config anpassen ==========
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -262,74 +286,72 @@ const firebaseConfig = {
     let loggedInUser = null;
     let loggedInEmail = null;
     let canRemove = false;
-
     let currentEventId = null;
 
-    // Konsolen-Logs für Debug
-    // Notification-Funktion
-    function showNotification(msg,type='success') {
-      console.log("[Notification]", type, msg); // Debug
+    // Notifications
+    function showNotification(message, type='success') {
+      console.log("[Notification]", type, message);
       const container = document.getElementById('notification');
-      const div = document.createElement('div');
-      div.className='notification-message';
-      if(type==='error') div.classList.add('notification-error');
-      else if(type==='info') div.classList.add('notification-info');
-      div.textContent= msg;
-      container.appendChild(div);
+      const notif = document.createElement('div');
+      notif.className='notification-message';
+      if(type==='error') notif.classList.add('notification-error');
+      else if(type==='info') notif.classList.add('notification-info');
+      notif.textContent= message;
+      container.appendChild(notif);
       setTimeout(()=>{
-        div.style.opacity='0';
-        setTimeout(()=>div.remove(),500);
+        notif.style.opacity='0';
+        setTimeout(()=>notif.remove(),500);
       },3000);
     }
 
-    // Event neu laden, ohne Page-Reload
+    /* ========== Event-Daten neu laden ========== */
     async function loadEvent() {
       console.log("[loadEvent] ID =", currentEventId);
       if(!currentEventId) {
         document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
         return;
       }
-      const eventDocRef = doc(db, "events", currentEventId);
-      const snapshot = await getDoc(eventDocRef);
-      console.log("[loadEvent] snapshot.exists=", snapshot.exists());
+      const eventDocRef= doc(db, "events", currentEventId);
+      const snapshot= await getDoc(eventDocRef);
+      console.log("[loadEvent] snapshot.exists()=", snapshot.exists());
       if(!snapshot.exists()) {
-        document.getElementById('eventContainer').innerHTML = "<p>Event nicht gefunden.</p>";
+        document.getElementById('eventContainer').innerHTML= "<p>Event nicht gefunden.</p>";
         return;
       }
-      const eventData = snapshot.data();
-      console.log("[loadEvent] eventData =", eventData);
+      const eventData= snapshot.data();
+      console.log("[loadEvent] eventData=", eventData);
 
       renderEventDetails(eventData);
       document.getElementById('commentSection').style.display='block';
     }
 
-    function renderEventDetails(ev) {
-      const cont = document.getElementById('eventContainer');
-      cont.innerHTML='';
+    /* ========== Event-Details ins DOM packen ========== */
+    function renderEventDetails(ev){
+      const container= document.getElementById('eventContainer');
+      container.innerHTML='';
 
-      // Name + Datum
-      const dateStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-      const h2 = document.createElement('h2');
+      const dStr= new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+      const h2= document.createElement('h2');
       h2.textContent= ev.name;
-      cont.appendChild(h2);
+      container.appendChild(h2);
 
-      const pDate = document.createElement('p');
-      pDate.innerHTML = `<strong>${dateStr}</strong> • Start: ${ev.startzeit||''} Uhr`;
-      cont.appendChild(pDate);
+      const pDate= document.createElement('p');
+      pDate.innerHTML= `<strong>${dStr}</strong> • Start: ${ev.startzeit||''} Uhr`;
+      container.appendChild(pDate);
 
       // Mitarbeiter
-      const staffP = document.createElement('p');
-      staffP.textContent='Verfügbare Mitarbeiter:';
-      cont.appendChild(staffP);
+      const staffP= document.createElement('p');
+      staffP.textContent= "Verfügbare Mitarbeiter:";
+      container.appendChild(staffP);
 
-      const staffDiv = document.createElement('div');
+      const staffDiv= document.createElement('div');
       (ev.mitarbeiter||[]).forEach(name=>{
-        const sp = document.createElement('span');
+        const sp= document.createElement('span');
         sp.style.display='inline-block';
         sp.style.marginRight='6px';
-        sp.textContent=name;
+        sp.textContent= name;
         if(canRemove) {
-          const xBtn = document.createElement('button');
+          const xBtn= document.createElement('button');
           xBtn.textContent='x';
           xBtn.style.marginLeft='4px';
           xBtn.onclick= ()=> removeStaff(name);
@@ -337,94 +359,111 @@ const firebaseConfig = {
         }
         staffDiv.appendChild(sp);
       });
-      cont.appendChild(staffDiv);
+      container.appendChild(staffDiv);
 
       // Kommentare sortieren
-      let sortedComments = (ev.comments || []).slice();
-      sortedComments.sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
-      renderComments(sortedComments);
+      let sorted= (ev.comments||[]).slice();
+      sorted.sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
+      renderComments(sorted);
     }
 
+    /* ========== Kommentare rendern (Chat-Layout) ========== */
     function renderComments(commentsArr){
       const listEl= document.getElementById('commentList');
       listEl.innerHTML='';
 
       commentsArr.forEach(commentObj=>{
-        const item= document.createElement('div');
-        item.className='comment-item';
+        // chat-bubble (Sprechblase)
+        const bubble= document.createElement('div');
+        bubble.classList.add('chat-bubble');
 
-        // Admin-Löschen
+        // Eigner Kommentar => class me, sonst other
+        if(commentObj.user === loggedInUser){
+          bubble.classList.add('me');
+        } else {
+          bubble.classList.add('other');
+        }
+
+        // Admin-löschen (x)
         if(canRemove){
           const removeX= document.createElement('button');
           removeX.className='comment-remove-x';
           removeX.textContent='x';
           removeX.onclick= ()=> removeComment(commentObj);
-          item.appendChild(removeX);
+          bubble.appendChild(removeX);
         }
 
-        // Zeile: Name (Datum), Herz
-        const userRow= document.createElement('div');
+        // Obere Zeile: Name, Datum, Herz in "header-line"
+        const headerLine= document.createElement('div');
+        headerLine.className='header-line';
+
         const userSpan= document.createElement('span');
         userSpan.className='comment-user';
         userSpan.textContent= commentObj.user;
 
         const metaSpan= document.createElement('span');
         metaSpan.className='comment-meta';
-        metaSpan.textContent= " ("+ new Date(commentObj.timestamp).toLocaleString('de-DE') +")";
-        userSpan.appendChild(metaSpan);
+        metaSpan.textContent= ` (${ new Date(commentObj.timestamp).toLocaleString('de-DE') })`;
 
         // Herz-Button
         const heartBtn= document.createElement('button');
         heartBtn.className='like-btn';
-        const isLiked = (commentObj.likes||[]).includes(loggedInEmail||loggedInUser);
-        if(isLiked) heartBtn.classList.add('like-filled');
-        else heartBtn.classList.add('like-outlined');
+        const isLiked= (commentObj.likes||[]).includes(loggedInEmail||loggedInUser);
+        if(isLiked) {
+          heartBtn.classList.add('like-filled');
+        } else {
+          heartBtn.classList.add('like-outlined');
+        }
         heartBtn.onclick= ()=> toggleLike(commentObj);
 
-        userRow.appendChild(userSpan);
-        userRow.appendChild(heartBtn);
+        // Füge Name + Datum + Herz in die header-line
+        headerLine.appendChild(userSpan);
+        headerLine.appendChild(metaSpan);
+        headerLine.appendChild(heartBtn);
 
-        item.appendChild(userRow);
+        bubble.appendChild(headerLine);
 
         // Kommentar-Text
-        const textDiv= document.createElement('div');
-        textDiv.className='comment-text';
-        textDiv.textContent= commentObj.text;
-        item.appendChild(textDiv);
+        const textEl= document.createElement('div');
+        textEl.className='comment-text';
+        textEl.textContent= commentObj.text;
+        bubble.appendChild(textEl);
 
-        // "Du wurdest X mal geherzt!"
+        // "Du wurdest X mal geherzt!" 
         const count= (commentObj.likes||[]).length;
         const heartLabel= document.createElement('div');
         heartLabel.className='heart-label';
         heartLabel.textContent= `Du wurdest ${count} mal geherzt!`;
-        item.appendChild(heartLabel);
+        bubble.appendChild(heartLabel);
 
         // Admin-Reply
         if(commentObj.adminReply && commentObj.adminReply.trim().length>0){
-          const rEl= document.createElement('div');
-          rEl.className='admin-reply';
-          rEl.textContent= 'Antwort vom Admin: '+ commentObj.adminReply;
-          item.appendChild(rEl);
+          const replyEl= document.createElement('div');
+          replyEl.className='admin-reply';
+          replyEl.textContent= 'Antwort vom Admin: '+commentObj.adminReply;
+          bubble.appendChild(replyEl);
         }
 
-        // Unten Admin-Buttons
+        // Wenn Admin -> "Antwort"-Button unten
         if(canRemove){
           const actions= document.createElement('div');
           actions.className='comment-actions';
+
           const replyBtn= document.createElement('button');
           replyBtn.textContent='Antwort';
           replyBtn.onclick= ()=> respondToComment(commentObj);
           actions.appendChild(replyBtn);
-          item.appendChild(actions);
+
+          bubble.appendChild(actions);
         }
 
-        listEl.appendChild(item);
+        listEl.appendChild(bubble);
       });
     }
 
-    /* ==============================
-       Klick-Funktionen (ohne Reload) 
-       ============================== */
+    /* ========== Klick-Funktionen (kein Reload, nur loadEvent()) ========== */
+
+    // Kommentar hinzufügen
     async function addComment(){
       if(!loggedInUser){
         showNotification('Bitte einloggen','error');
@@ -448,28 +487,29 @@ const firebaseConfig = {
         timestamp: new Date().toISOString(),
         likes:[]
       };
-      try {
-        const ref= doc(db,"events",currentEventId);
+      try{
+        const ref= doc(db,"events", currentEventId);
         await updateDoc(ref, {
           comments: arrayUnion(newComm)
         });
         showNotification('Kommentar hinzugefügt','info');
         input.value='';
-        // Nur Daten neu laden
+        // Nur neu laden (Event)
         loadEvent();
       } catch(err){
         showNotification('Fehler beim Kommentar: '+err.message,'error');
       }
     }
 
-    async function addCommentAndReload(){
+    function addCommentAndReload(){
       addComment();
     }
 
+    // Kommentar löschen
     async function removeComment(commentObj){
       if(!canRemove)return;
       if(!confirm('Kommentar wirklich löschen?'))return;
-      try {
+      try{
         const ref= doc(db,"events", currentEventId);
         await updateDoc(ref,{
           comments: arrayRemove(commentObj)
@@ -481,17 +521,16 @@ const firebaseConfig = {
       }
     }
 
+    // Admin antwortet
     async function respondToComment(commentObj){
       if(!canRemove)return;
       const reply= prompt('Admin-Antwort:', commentObj.adminReply||'');
       if(reply===null)return;
-      const updated= {...commentObj, adminReply:reply };
-      try {
+      const updated= {...commentObj, adminReply:reply};
+      try{
         const ref= doc(db,"events", currentEventId);
-        // Altes entfernen
-        await updateDoc(ref, { comments: arrayRemove(commentObj) });
-        // Neues einfügen
-        await updateDoc(ref, { comments: arrayUnion(updated) });
+        await updateDoc(ref,{ comments: arrayRemove(commentObj) });
+        await updateDoc(ref,{ comments: arrayUnion(updated) });
         showNotification('Antwort gespeichert','info');
         loadEvent();
       } catch(err){
@@ -499,12 +538,13 @@ const firebaseConfig = {
       }
     }
 
+    // Like toggeln
     async function toggleLike(commentObj){
       if(!loggedInUser){
         showNotification('Bitte einloggen zum Liken','error');
         return;
       }
-      const userId= loggedInEmail || loggedInUser;
+      const userId= loggedInEmail||loggedInUser;
       const newLikes= Array.isArray(commentObj.likes)? [...commentObj.likes]:[];
       if(newLikes.includes(userId)){
         // schon geliked -> entfernen
@@ -513,12 +553,10 @@ const firebaseConfig = {
         newLikes.push(userId);
       }
       const updated= {...commentObj, likes:newLikes};
-      try {
+      try{
         const ref= doc(db,"events", currentEventId);
-        // Alte Version raus
-        await updateDoc(ref, { comments: arrayRemove(commentObj) });
-        // Neue Version rein
-        await updateDoc(ref, { comments: arrayUnion(updated) });
+        await updateDoc(ref,{ comments: arrayRemove(commentObj) });
+        await updateDoc(ref,{ comments: arrayUnion(updated) });
         showNotification('Like aktualisiert','info');
         loadEvent();
       } catch(err){
@@ -526,6 +564,7 @@ const firebaseConfig = {
       }
     }
 
+    // Mitarbeiter entfernen
     async function removeStaff(name){
       if(!canRemove)return;
       if(!confirm('Mitarbeiter entfernen?'))return;
@@ -541,18 +580,19 @@ const firebaseConfig = {
       }
     }
 
-    // Auth
+    // Auth-Überwachung
     onAuthStateChanged(auth, user=>{
       if(user){
-        loggedInUser= user.displayName || user.email;
+        loggedInUser= user.displayName||user.email;
         loggedInEmail= user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
+        console.log("[Auth] loggedInUser=", loggedInUser, "canRemove=", canRemove);
       } else {
         loggedInUser= null;
         loggedInEmail= null;
         canRemove= false;
+        console.log("[Auth] Ausgeloggt");
       }
-      console.log("[AuthStateChanged] loggedInUser=", loggedInUser, "canRemove=", canRemove);
     });
 
     // Start
