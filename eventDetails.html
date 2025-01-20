@@ -29,26 +29,42 @@
       background-color: var(--background-color);
       color: #333;
       margin: 0;
-      padding-bottom: 60px; 
+      padding-bottom: 60px;
     }
 
+    /* Header mit kleinerer Schrift, mittig */
     header {
       background-color: var(--primary-color);
       color: var(--white);
-      padding: 0 15px;
       height: 60px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      font-size: 1.4em;
+      justify-content: center; /* Text mittig */
+      font-size: 0.95em; /* etwas kleiner */
       box-shadow: var(--shadow);
+      text-align: center;
+      position: relative;
     }
     .title {
       font-weight: bold;
-      font-size: 1.2em;
+      font-size: 1em; /* kleiner */
     }
 
-    /* Zurück-Button (AUßERHALB header, normaler Button-Stil) */
+    /* "Hallo (user)" mittig */
+    #welcomeUser {
+      font-size: 1em;
+    }
+
+    /* Falls du im Header noch Buttons hättest, könntest du position:absolute nutzen */
+    /* Hier lediglich .title mittig */
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    /* Zurück-Button: normaler Button-Stil, unter dem Header */
     #backButton {
       background-color: var(--primary-color);
       color: #fff;
@@ -63,17 +79,7 @@
       margin-top: 20px;
     }
 
-    #welcomeUser {
-      font-size: 1em;
-      margin-right: 10px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
-    }
-
+    /* .event Container */
     .event {
       background-color: var(--white);
       border: 1px solid #ddd;
@@ -121,6 +127,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      margin-top: 10px; /* Abstand zw. Kommentarfeld & 1. Kommentar */
     }
     .chat-bubble {
       position: relative;
@@ -142,7 +149,7 @@
       position: absolute; 
       top: 50%;
       transform: translateY(-50%);
-      right: -30px; /* "rechts in der mitte" */
+      right: -30px; /* rechts in der Mitte */
       background: none; 
       border: none; 
       font-size: 1em; 
@@ -156,17 +163,19 @@
     .chat-header {
       display: flex;
       width: 100%;
-      justify-content: space-between; /* Herz rückt nach rechts */
+      justify-content: space-between; 
       align-items: center;
       margin-bottom: 2px; /* minimaler Abstand */
     }
 
+    /* Datum/Uhrzeit dezenter, direkt hinter dem Namen */
     .chat-meta {
       font-size: 0.8em;
       color: #888;
-      margin-left: 1ch; /* nur 1 Leerzeichen, minimaler Abstand */
+      margin-left: 1ch; /* nur 1 "Leerzeichen" */
     }
 
+    /* Like-Button */
     .like-btn {
       border: none; 
       background: none; 
@@ -235,8 +244,8 @@
     }
 
     @media (max-width: 768px) {
-      .event {
-        padding: 16px;
+      header {
+        font-size: 0.9em;
       }
       .chat-bubble {
         max-width: 80%;
@@ -250,18 +259,13 @@
 
 <body>
   <header>
-    <div class="title">Goethebunker Schichtplanung</div>
-    <div id="welcomeUser" style="display:none;">Willkommen!</div>
+    <div class="title" id="welcomeUser" style="display:none;">Hallo User</div>
   </header>
 
   <div id="notification"></div>
 
   <div class="container">
-    <!-- Statt Datum: "Bunker Schichtplan" -->
-    <p style="font-size:1.1em; margin-bottom:20px; font-weight:bold;">Bunker Schichtplan</p>
-
-    <!-- Zurück-Button (nicht im Header) -->
-    <button id="backButton" onclick="goBack()">Zurück</button>
+    <button id="backButton">Zurück</button>
 
     <!-- (1) VERANSTALTUNGS-DETAILS -->
     <div class="event" id="detailContainer">
@@ -280,10 +284,10 @@
     <!-- (3) KOMMENTAR-BEREICH (Chat) -->
     <div class="event" id="commentContainer">
       <h3>Kommentare</h3>
-      <div class="chat-list" id="commentList"></div>
-
       <textarea id="commentInput" rows="2" placeholder="Kommentar..."></textarea>
       <button id="sendCommentBtn">Senden</button>
+
+      <div class="chat-list" id="commentList"></div>
     </div>
   </div>
 
@@ -320,9 +324,9 @@
     let loggedInUser = null;
     let canRemove = false;  // Admin?
     let currentEventId = null;
-    let unsubscribeDoc = null; // So we can stop onSnapshot if needed
+    let unsubDoc = null;
 
-    // Benachrichtigungen
+    // Notifikation
     function showNotification(msg, type='success'){
       const container= document.getElementById('notification');
       const div= document.createElement('div');
@@ -337,18 +341,17 @@
       },3000);
     }
 
-    // Go Back
-    function goBack(){
+    // Zurück-Button
+    document.getElementById('backButton').addEventListener('click', ()=>{
       window.location.href='index.html';
-    }
+    });
 
     // Render: Details
     function renderDetails(evData){
       let detailHTML="";
-      detailHTML += `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
+      detailHTML+= `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
       if(evData.datum){
         const dObj= new Date(evData.datum);
-        // Format: DD.MM.YY
         const dd= String(dObj.getDate()).padStart(2,'0');
         const mm= String(dObj.getMonth()+1).padStart(2,'0');
         const yy= String(dObj.getFullYear()%100).padStart(2,'0');
@@ -367,7 +370,7 @@
 
     // Render: Wichtige Infos
     function renderInfos(evData){
-      const infoStr= evData.importantInfo || "Noch keine Infos...";
+      const infoStr= evData.importantInfo||"Noch keine Infos...";
       document.getElementById('infoText').innerHTML= infoStr.replace(/\n/g,'<br>');
       if(canRemove){
         document.getElementById('infoInput').style.display='block';
@@ -378,7 +381,6 @@
         document.getElementById('saveInfoBtn').style.display='none';
       }
     }
-
     async function saveInfos(){
       if(!canRemove)return;
       const newVal= document.getElementById('infoInput').value.trim();
@@ -398,7 +400,7 @@
       const cList= document.getElementById('commentList');
       cList.innerHTML='';
       if(!sorted.length){
-        cList.innerHTML= "<p>Noch keine Kommentare</p>";
+        cList.innerHTML="<p>Noch keine Kommentare</p>";
         return;
       }
       sorted.forEach(cObj=>{
@@ -415,50 +417,44 @@
           bubble.appendChild(xBtn);
         }
 
-        // Header (Name bold, + Datum, + Zeit => DD.MM.YY HH:MM, + Heart Right)
+        // Header
         const header= document.createElement('div');
         header.className='chat-header';
 
-        // Name bold + date/time with only one space
-        const nameSpan= document.createElement('span');
-        nameSpan.innerHTML= `<strong>${cObj.user}</strong> `; // bold name
-
+        // Name + Datum/Uhrzeit (DD.MM.YY HH:MM)
+        const nameBold= document.createElement('span');
+        // name + date behind
         const dtObj= new Date(cObj.timestamp);
         const dd= String(dtObj.getDate()).padStart(2,'0');
         const mm= String(dtObj.getMonth()+1).padStart(2,'0');
         const yy= String(dtObj.getFullYear()%100).padStart(2,'0');
         const hh= String(dtObj.getHours()).padStart(2,'0');
-        const min= String(dtObj.getMinutes()).padStart(2,'0');
-        const dtStr= `${dd}.${mm}.${yy} ${hh}:${min}`;
-        
-        const metaSpan= document.createElement('span');
-        metaSpan.className='chat-meta';
-        metaSpan.textContent= dtStr;  // name + ' ' + dt => "Moritz 03.08.23 12:34"
+        const mn= String(dtObj.getMinutes()).padStart(2,'0');
+        const dtStr= `${dd}.${mm}.${yy} ${hh}:${mn}`;
+
+        nameBold.innerHTML= `<strong>${cObj.user}</strong>(${dtStr})`;
 
         // Like
         const likeBtn= document.createElement('button');
         likeBtn.className='like-btn';
-        const likes= cObj.likes||[];
-        const isLiked= likes.includes(loggedInUser);
-        if(isLiked) likeBtn.classList.add('like-filled');
-        else likeBtn.classList.add('like-outlined');
+        const oldLikes= cObj.likes||[];
+        const isLiked= oldLikes.includes(loggedInUser);
+        likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
         likeBtn.onclick= ()=> toggleLike(cObj);
 
-        // Append
-        header.appendChild(nameSpan);
-        header.appendChild(metaSpan);
+        header.appendChild(nameBold);
         header.appendChild(likeBtn);
         bubble.appendChild(header);
 
-        // Text with line breaks
-        const txtDiv= document.createElement('div');
-        txtDiv.innerHTML= (cObj.text||"").replace(/\n/g,'<br>');
-        bubble.appendChild(txtDiv);
+        // Text
+        const textDiv= document.createElement('div');
+        textDiv.innerHTML= (cObj.text||"").replace(/\n/g,'<br>');
+        bubble.appendChild(textDiv);
 
         // "Dein Kommentar wurde x mal geherzt."
         const heartLine= document.createElement('div');
         heartLine.className='heart-line';
-        heartLine.textContent= `Dein Kommentar wurde ${likes.length} mal geherzt.`;
+        heartLine.textContent= `Dein Kommentar wurde ${oldLikes.length} mal geherzt.`;
         bubble.appendChild(heartLine);
 
         cList.appendChild(bubble);
@@ -480,20 +476,20 @@
         user: loggedInUser,
         text: txt,
         timestamp: new Date().toISOString(),
-        likes: []
+        likes:[]
       };
-      const ref= doc(db,"events",currentEventId);
+      const ref= doc(db,"events", currentEventId);
       try{
         await updateDoc(ref,{ comments: arrayUnion(newComm) });
         document.getElementById('commentInput').value='';
         showNotification("Kommentar hinzugefügt");
-      }catch(err){
+      } catch(err){
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
 
     async function removeComment(cObj){
-      if(!canRemove) return;
+      if(!canRemove)return;
       if(!confirm("Nachricht wirklich löschen?")) return;
       const ref= doc(db,"events", currentEventId);
       try{
@@ -511,7 +507,7 @@
       }
       const oldLikes= Array.isArray(cObj.likes)? [...cObj.likes]:[];
       const i= oldLikes.indexOf(loggedInUser);
-      if(i>=0) oldLikes.splice(i,1); 
+      if(i>=0) oldLikes.splice(i,1);
       else oldLikes.push(loggedInUser);
 
       const updated= {...cObj, likes: oldLikes};
@@ -521,7 +517,7 @@
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         // add new
         await updateDoc(ref,{ comments: arrayUnion(updated) });
-      } catch(err){
+      }catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
     }
@@ -535,33 +531,35 @@
       }
     }
 
-    // ECHTZEIT-FUNKTION mit onSnapshot
+    // Echtzeit per onSnapshot
     function listenToEventDoc(){
       const ref= doc(db,"events", currentEventId);
-      // Falls wir bereits ein unsubscribe hatten, rufen wir es vorher auf
-      if(typeof unsubscribeDoc==='function') unsubscribeDoc();
-      unsubscribeDoc= onSnapshot(ref,(snapshot)=>{
+      if(typeof unsubDoc==='function') unsubDoc(); // evtl. beenden
+      unsubDoc= onSnapshot(ref,(snapshot)=>{
         if(!snapshot.exists()){
           document.body.innerHTML="<p>Event nicht gefunden</p>";
           return;
         }
         const evData= snapshot.data();
-        // Re-render
+        // Updaten
         renderDetails(evData);
         renderInfos(evData);
         renderComments(evData.comments||[]);
       },(err)=>{
-        console.error("onSnapshot Fehler:", err);
+        console.error("Snapshot Fehler",err);
         showNotification("Fehler: "+err.message,'error');
       });
     }
 
-    // Auth
-    onAuthStateChanged(auth, (user)=>{
+    onAuthStateChanged(auth, user=>{
       if(user){
         loggedInUser= user.displayName||user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
-        listenToEventDoc(); // ECHTZEIT statt getDoc
+        // "Hallo (user)"
+        const wel= document.getElementById('welcomeUser');
+        wel.textContent= "Hallo "+loggedInUser;
+        wel.style.display='block';
+        listenToEventDoc();
       } else {
         loggedInUser=null;
         canRemove=false;
@@ -576,9 +574,9 @@
         document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
+      document.getElementById('logoutButton').addEventListener('click', logout);
       document.getElementById('saveInfoBtn').addEventListener('click', saveInfos);
       document.getElementById('sendCommentBtn').addEventListener('click', sendComment);
-      document.getElementById('logoutButton').addEventListener('click', logout);
     });
   </script>
 </body>
