@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no">
   <title>Event-Details - Goethebunker</title>
 
@@ -13,10 +14,33 @@
       padding: 20px;
       color: #333;
     }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
     h1 { 
       font-size: 1.4em; 
       color: #007bff;
       margin-bottom: 10px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .back-link {
+      color: #007bff;
+      text-decoration: none;
+      font-size: 1em;
+      padding: 6px 10px;
+      border: 1px solid #007bff;
+      border-radius: 6px;
+      background: #fff;
     }
 
     .eventDetails {
@@ -87,7 +111,7 @@
       font-weight: bold;
     }
 
-    /* Likebox klein, kein Hover */
+    /* Likebox sehr klein */
     .like-container {
       display: flex;
       justify-content: flex-end;
@@ -99,13 +123,13 @@
       gap: 4px;
       border-radius: 4px;
       background-color: #eee;
-      padding: 2px 6px;
+      padding: 2px 4px; /* sehr klein */
     }
     .like-btn {
       border: none; 
       background: none; 
       cursor: pointer;
-      font-size: 1.1em;
+      font-size: 1em; /* kleiner */
       color: #000;
     }
     .like-outlined::before {
@@ -116,7 +140,7 @@
       color: #e53939;
     }
     .like-count {
-      font-size: 0.85em;
+      font-size: 0.8em;
     }
 
     .comment-actions {
@@ -138,20 +162,60 @@
       border-radius: 6px;
       font-size: 1em;
     }
+    /* Kommentar-Textfeld nicht skalierbar */
+    textarea {
+      resize: none;
+    }
+
+    /* Container für Meldungen (optional) */
+    #notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      max-width: 90%;
+      z-index: 2000;
+    }
+    .notification-message {
+      background-color: #28a745; /* Erfolg */
+      color: #fff;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      opacity: 0.95;
+    }
+    .notification-error {
+      background-color: #dc3545;
+    }
+    .notification-info {
+      background-color: #17a2b8;
+    }
   </style>
 </head>
 <body>
-  <h1>Event-Details</h1>
-  <div id="eventContainer" class="eventDetails">
-    <!-- Daten zum Event werden hier eingefügt -->
+  <div id="notification"></div>
+
+  <!-- Top-Bar mit Zurück-Link -->
+  <div class="top-bar">
+    <a class="back-link" href="index.html">&laquo; Zurück</a>
+    <h1>Event-Details</h1>
   </div>
 
-  <!-- Kommentare etc. -->
+  <!-- Event-Daten -->
+  <div id="eventContainer" class="eventDetails">
+    <!-- Wird dynamisch befüllt -->
+  </div>
+
+  <!-- Kommentarbereich (Kommentare oben, Feld unten) -->
   <div id="commentSection" class="commentSection" style="display:none;">
     <h3>Kommentare</h3>
+
+    <!-- Kommentar-Liste oben -->
+    <div class="comment-list" id="commentList"></div>
+
+    <!-- Eingabefeld unten -->
     <textarea id="commentInput" rows="3" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
     <button class="small-button" id="addCommentButton">Kommentar absenden</button>
-    <div class="comment-list" id="commentList"></div>
   </div>
 
   <!-- Firebase / JS -->
@@ -188,6 +252,12 @@ const firebaseConfig = {
     // URL param ?id=...
     let currentEventId = null;
 
+    // Kurz-Helfer zum neu Laden mit gleicher ID
+    function reloadPage() {
+      // Lädt dieselbe Seite neu mit identischer ID
+      window.location.href = window.location.pathname + "?id=" + currentEventId;
+    }
+
     // Bei DOM Start
     document.addEventListener('DOMContentLoaded', async ()=>{
       // parse URL
@@ -202,8 +272,23 @@ const firebaseConfig = {
       await loadEvent();
 
       // Buttons
-      document.getElementById('addCommentButton').addEventListener('click', addComment);
+      document.getElementById('addCommentButton').addEventListener('click', ()=>addCommentAndReload());
     });
+
+    // Notification
+    function showNotification(message, type='success') {
+      const container = document.getElementById('notification');
+      const notif = document.createElement('div');
+      notif.className = 'notification-message';
+      if(type==='error') notif.classList.add('notification-error');
+      else if(type==='info') notif.classList.add('notification-info');
+      notif.textContent=message;
+      container.appendChild(notif);
+      setTimeout(()=>{
+        notif.style.opacity='0';
+        setTimeout(()=>notif.remove(),500);
+      },3000);
+    }
 
     // Event laden
     async function loadEvent() {
@@ -215,43 +300,53 @@ const firebaseConfig = {
       }
       const eventData = snapshot.data();
       renderEventDetails(eventData);
-      // Kommentarbereich zeigen
+      // Kommentarbereich sichtbar
       document.getElementById('commentSection').style.display = 'block';
     }
 
     function renderEventDetails(ev) {
       const cont = document.getElementById('eventContainer');
       cont.innerHTML = '';
+
+      // Datum
       const dateStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-      cont.innerHTML = `
-        <h2>${ev.name}</h2>
-        <p><strong>${dateStr}</strong> • Start: ${ev.startzeit || ''} Uhr</p>
-        <p>Verfügbare Mitarbeiter:</p>
-      `;
-      // Liste
+      // Name, Datum
+      const h2 = document.createElement('h2');
+      h2.textContent= ev.name;
+      cont.appendChild(h2);
+
+      const pDate = document.createElement('p');
+      pDate.innerHTML = `<strong>${dateStr}</strong> • Start: ${ev.startzeit || ''} Uhr`;
+      cont.appendChild(pDate);
+
+      // Mitarbeiter
+      const staffP = document.createElement('p');
+      staffP.textContent='Verfügbare Mitarbeiter:';
+      cont.appendChild(staffP);
+
       const staffDiv = document.createElement('div');
       (ev.mitarbeiter||[]).forEach(name => {
-        const span = document.createElement('span');
-        span.style.display='inline-block';
-        span.style.marginRight='6px';
-        span.textContent = name;
+        const sp = document.createElement('span');
+        sp.style.display='inline-block';
+        sp.style.marginRight='6px';
+        sp.textContent = name;
+
+        // Admin -> x
         if(canRemove) {
-          // Admin kann entfernen
           const xBtn = document.createElement('button');
           xBtn.textContent='x';
           xBtn.style.marginLeft='4px';
-          xBtn.onclick = ()=> removeStaff(name);
-          span.appendChild(xBtn);
+          xBtn.onclick = ()=> removeStaffAndReload(name);
+          sp.appendChild(xBtn);
         }
-        staffDiv.appendChild(span);
+        staffDiv.appendChild(sp);
       });
       cont.appendChild(staffDiv);
 
-      // Kommentare
-      renderComments(ev.comments || []);
+      // Kommentare rendern
+      renderComments(ev.comments||[]);
     }
 
-    // Kommentare rendern
     function renderComments(commentsArr) {
       const listEl = document.getElementById('commentList');
       listEl.innerHTML = '';
@@ -260,11 +355,12 @@ const firebaseConfig = {
         const item = document.createElement('div');
         item.className = 'comment-item';
 
+        // Admin: löschen (x)
         if(canRemove) {
           const removeX = document.createElement('button');
           removeX.className='comment-remove-x';
           removeX.textContent='x';
-          removeX.onclick = ()=> removeComment(commentObj);
+          removeX.onclick = ()=> removeCommentAndReload(commentObj);
           item.appendChild(removeX);
         }
 
@@ -275,7 +371,8 @@ const firebaseConfig = {
 
         const metaEl = document.createElement('span');
         metaEl.className='comment-meta';
-        metaEl.textContent = ` (${new Date(commentObj.timestamp).toLocaleString('de-DE')})`;
+        const dt = new Date(commentObj.timestamp).toLocaleString('de-DE');
+        metaEl.textContent = ` (${dt})`;
         userEl.appendChild(metaEl);
 
         const textEl = document.createElement('div');
@@ -285,6 +382,7 @@ const firebaseConfig = {
         item.appendChild(userEl);
         item.appendChild(textEl);
 
+        // Admin-Reply
         if(commentObj.adminReply && commentObj.adminReply.trim().length>0) {
           const replyEl = document.createElement('div');
           replyEl.className='admin-reply';
@@ -292,7 +390,7 @@ const firebaseConfig = {
           item.appendChild(replyEl);
         }
 
-        // Like Container
+        // Like-Box
         const likeContainer = document.createElement('div');
         likeContainer.className='like-container';
 
@@ -307,36 +405,35 @@ const firebaseConfig = {
         } else {
           likeBtn.classList.add('like-outlined');
         }
-        likeBtn.onclick = () => toggleLike(commentObj);
+        likeBtn.onclick = ()=> toggleLikeAndReload(commentObj);
 
         const likeCount = document.createElement('span');
         likeCount.className='like-count';
-        likeCount.textContent = String((commentObj.likes||[]).length);
+        likeCount.textContent= String((commentObj.likes||[]).length);
 
         likeBox.appendChild(likeBtn);
         likeBox.appendChild(likeCount);
         likeContainer.appendChild(likeBox);
         item.appendChild(likeContainer);
 
-        // Admin kann antworten
+        // Admin-Buttons unten
         if(canRemove) {
-          const actions = document.createElement('div');
-          actions.className='comment-actions';
-
+          const actionsDiv = document.createElement('div');
+          actionsDiv.className='comment-actions';
           const replyBtn = document.createElement('button');
           replyBtn.textContent='Antwort';
-          replyBtn.onclick= ()=> respondToComment(commentObj);
-
-          actions.appendChild(replyBtn);
-          item.appendChild(actions);
+          replyBtn.onclick= ()=> respondToCommentAndReload(commentObj);
+          actionsDiv.appendChild(replyBtn);
+          item.appendChild(actionsDiv);
         }
 
         listEl.appendChild(item);
       });
     }
 
-    // Kommentar hinzufügen
-    async function addComment() {
+    // ========== Klick-Funktionen (alle reloadPage am Ende) ==========
+
+    async function addCommentAndReload() {
       if(!loggedInUser) {
         alert('Bitte einloggen');
         return;
@@ -365,17 +462,15 @@ const firebaseConfig = {
           comments: arrayUnion(newComm)
         });
         alert('Kommentar hinzugefügt');
-        input.value='';
-        // Neu laden
-        loadEvent();
+        // Seite neu laden
+        reloadPage();
       } catch(err) {
         console.error('Fehler addComment', err);
         alert('Fehler beim Kommentar: '+err.message);
       }
     }
 
-    // Kommentar löschen (Admin)
-    async function removeComment(commentObj) {
+    async function removeCommentAndReload(commentObj) {
       if(!canRemove) return;
       if(!confirm('Kommentar wirklich löschen?')) return;
       try {
@@ -383,30 +478,28 @@ const firebaseConfig = {
         await updateDoc(ref, {
           comments: arrayRemove(commentObj)
         });
-        loadEvent();
+        reloadPage();
       } catch(err) {
         alert('Fehler beim Löschen: '+err.message);
       }
     }
 
-    // Admin antwortet
-    async function respondToComment(commentObj) {
+    async function respondToCommentAndReload(commentObj) {
       if(!canRemove) return;
       const reply = prompt('Admin-Antwort:', commentObj.adminReply||'');
       if(reply===null) return;
       const updated = {...commentObj, adminReply:reply};
       try {
         const ref = doc(db,"events", currentEventId);
-        await updateDoc(ref, { comments: arrayRemove(commentObj) });
-        await updateDoc(ref, { comments: arrayUnion(updated) });
-        loadEvent();
+        await updateDoc(ref,{ comments: arrayRemove(commentObj) });
+        await updateDoc(ref,{ comments: arrayUnion(updated) });
+        reloadPage();
       } catch(err) {
         alert('Fehler bei Antwort: '+err.message);
       }
     }
 
-    // Like toggeln
-    async function toggleLike(commentObj) {
+    async function toggleLikeAndReload(commentObj) {
       if(!loggedInUser) {
         alert('Bitte einloggen zum Liken');
         return;
@@ -424,22 +517,21 @@ const firebaseConfig = {
         const ref = doc(db,"events", currentEventId);
         await updateDoc(ref, { comments: arrayRemove(commentObj) });
         await updateDoc(ref, { comments: arrayUnion(updated) });
-        loadEvent();
+        reloadPage();
       } catch(err) {
         alert('Fehler beim Liken: '+err.message);
       }
     }
 
-    // Staff entfernen (Admin)
-    async function removeStaff(name) {
-      if(!canRemove) return;
-      if(!confirm('Mitarbeiter entfernen?')) return;
+    async function removeStaffAndReload(name) {
+      if(!canRemove)return;
+      if(!confirm('Mitarbeiter entfernen?'))return;
       try {
         const ref = doc(db,"events", currentEventId);
         await updateDoc(ref, {
           mitarbeiter: arrayRemove(name)
         });
-        loadEvent();
+        reloadPage();
       } catch(err) {
         alert('Fehler beim Entfernen: '+err.message);
       }
@@ -456,8 +548,9 @@ const firebaseConfig = {
         loggedInEmail=null;
         canRemove=false;
       }
-      // Nach dem Login/Logout kann man neu laden, um Admin-Funktionen einzublenden
-      loadEvent();
+      // Wenn wir was ändern (Admin-Status?), neu laden
+      // => Machen wir hier NICHT nochmal loadEvent(), 
+      //    weil wir es schon beim DOM load machen
     });
   </script>
 </body>
