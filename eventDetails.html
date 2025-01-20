@@ -251,8 +251,8 @@
       <div class="comment-list" id="commentList"></div>
 
       <!-- Eingabefeld unter den Kommentaren -->
-      <textarea id="commentInput" rows="1" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
-      <button id="addCommentButton">Kommentar absenden</button>
+      <textarea id="commentInput" rows="1" placeholder="schreib was..." maxlength="160"></textarea>
+      <button id="addCommentButton">Kommentieren</button>
     </div>
   </div>
 
@@ -557,10 +557,10 @@ const firebaseConfig = {
         const ref= doc(db,"events", currentEventId);
         await updateDoc(ref,{ comments: arrayRemove(commentObj) });
         await updateDoc(ref,{ comments: arrayUnion(updated) });
-        showNotification('Like aktualisiert','info');
+        showNotification('Du hast geherzt','info');
         loadEvent();
       } catch(err){
-        showNotification('Fehler beim Liken: '+err.message,'error');
+        showNotification('Fehler beim herzen: '+err.message,'error');
       }
     }
 
