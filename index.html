@@ -17,7 +17,7 @@
       --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       --border-radius: 8px;
       --shadow: 0 4px 6px rgba(0,0,0,0.1);
-      --button-padding: 8px 12px; /* Kleinerer Padding */
+      --button-padding: 8px 12px;
     }
 
     * {
@@ -29,7 +29,7 @@
       font-family: var(--font-family);
       background-color: var(--background-color);
       color: #333;
-      padding-bottom: 60px; /* Platz für Footer */
+      padding-bottom: 60px;
       margin: 0;
     }
 
@@ -74,7 +74,6 @@
       font-size: 1em;
     }
 
-    /* Keine Hover-Effekte auf Buttons */
     button {
       padding: var(--button-padding);
       background-color: var(--primary-color);
@@ -84,6 +83,7 @@
       cursor: pointer;
       font-size: 1em;
       margin-bottom: 16px;
+      /* Keine Hover-Effekte */
     }
 
     .event {
@@ -95,7 +95,6 @@
       box-shadow: var(--shadow);
       position: relative;
     }
-
     .event h3 {
       margin: 0 0 8px;
       color: var(--primary-color);
@@ -121,7 +120,6 @@
       gap: 8px;
       margin-top: 10px;
     }
-
     .name-item {
       background-color: #e9ecef;
       padding: 6px 10px;
@@ -134,7 +132,7 @@
     }
     .name-item .remove {
       background-color: var(--danger-color);
-      color: var(--white);
+      color: #fff;
       border: none;
       border-radius: 50%;
       width: 20px;
@@ -359,8 +357,6 @@ const firebaseConfig = {
     let loggedInUser = null;
     let loggedInEmail = null;
     let canRemove = false;
-
-    // WIRD NUR EINMAL DEKLARIERT!
     let allEventsData = [];  // Für CSV-Export etc.
 
     /* ===================
@@ -393,6 +389,10 @@ const firebaseConfig = {
     function renderEvents(data) {
       const container = document.getElementById('eventContainer');
       container.innerHTML = '';
+
+      // Hier wird nichts neu geladen -> wir zeigen nur die Daten
+      // Sortierung nach Datum ist dir überlassen. 
+      // (Optional: data.sort(...) falls gewünscht.)
 
       data.forEach(ev => {
         const div = document.createElement('div');
@@ -435,7 +435,7 @@ const firebaseConfig = {
         confirmBtn.onclick=()=> confirmForEvent(ev.id);
         div.appendChild(confirmBtn);
 
-        // Link "Kommentare" (neue Seite)
+        // Link "Kommentare" -> details-Seite
         const commentsLink = document.createElement('a');
         commentsLink.textContent="Kommentare";
         commentsLink.href=`eventDetails.html?id=${ev.id}`;
@@ -519,7 +519,6 @@ const firebaseConfig = {
         snapshot.forEach(docData=>{
           data.push({ id:docData.id, ...docData.data()});
         });
-        // Nur EINMAL definierte allEventsData
         allEventsData = data; 
         renderEvents(data);
 
@@ -563,7 +562,6 @@ const firebaseConfig = {
         return;
       }
       try {
-        // prüfen ob es existiert
         const qy=query(collection(db,"events"),
           where("datum","==",eventDate),
           where("name","==",eventNameVal),
@@ -649,6 +647,11 @@ const firebaseConfig = {
         loggedInEmail = user.email;
         canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
         updateUIAfterLogin();
+
+        // Veranstaltungen direkt initialisieren NACH Login,
+        // damit nicht erst Reload nötig ist
+        initializeAppData();
+
       } else {
         loggedInUser=null;
         loggedInEmail=null;
@@ -677,6 +680,8 @@ const firebaseConfig = {
         canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
         loggedInUser = user.displayName || user.email;
         showNotification(`${loggedInUser} ist eingeloggt.`,'success');
+        // KEIN reload nötig, da wir 
+        // initializeAppData() in onAuthStateChanged aufrufen
       }catch(err){
         console.error('Login Fehler',err);
         showNotification('Login Fehler: '+err.message,'error');
@@ -727,6 +732,9 @@ const firebaseConfig = {
       document.getElementById('welcomeUser').style.display='none';
       document.getElementById('logoutButton').style.display='none';
       document.getElementById('adminSection').style.display='none';
+
+      // Optional: Clear event list
+      document.getElementById('eventContainer').innerHTML='';
     }
 
     function toggleOtherEvent(){
@@ -739,7 +747,9 @@ const firebaseConfig = {
        =================== */
     document.addEventListener('DOMContentLoaded',()=>{
       setCurrentDate();
-      initializeAppData();
+
+      // Wir warten, bis onAuthStateChanged feuert,
+      // um initializeAppData() erst beim Login-Status zu machen
 
       document.getElementById('loginButton').addEventListener('click',loginWithEmail);
       document.getElementById('registerButton').addEventListener('click',registerWithEmail);
