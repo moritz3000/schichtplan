@@ -67,7 +67,7 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1em;
-      margin-top: 6px; 
+      margin-top: 6px;
     }
 
     /* Kommentarbereich (Chat-Layout) */
@@ -107,11 +107,11 @@
       background-color: #eee;
     }
 
-    /* Name + Datum + Herz in einer Zeile */
+    /* Name + Datum + Herz in einer Zeile, linksbündig */
     .header-line {
       display: flex;
-      align-items: left;
-      justify-content: space-between; 
+      align-items: center;       /* vertikal zentriert */
+      justify-content: flex-start; /* alles linksbündig */
       gap: 8px;
       margin-bottom: 4px;
     }
@@ -122,11 +122,11 @@
     }
     .comment-meta {
       font-size: 0.8em;
-      color: #888;
+      color: #888;   /* dezenter */
       flex-shrink: 0;
     }
 
-    /* Herz-Button am Ende */
+    /* Herz-Button in derselben Zeile */
     .like-btn {
       border: none; 
       background: none; 
@@ -268,15 +268,15 @@
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
     // ========== Deine Firebase-Config anpassen ==========
-const firebaseConfig = {
-  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-  authDomain: "schichtplan-5c70f.firebaseapp.com",
-  projectId: "schichtplan-5c70f",
-  storageBucket: "schichtplan-5c70f.firebasestorage.app",
-  messagingSenderId: "502149312331",
-  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
-  measurementId: "G-0DL0R5B7LV"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+      authDomain: "schichtplan-5c70f.firebaseapp.com",
+      projectId: "schichtplan-5c70f",
+      storageBucket: "schichtplan-5c70f.firebasestorage.app",
+      messagingSenderId: "502149312331",
+      appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+      measurementId: "G-0DL0R5B7LV"
+    };
 
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
@@ -393,7 +393,7 @@ const firebaseConfig = {
           bubble.appendChild(removeX);
         }
 
-        // Obere Zeile: Name, Datum, Herz in "header-line"
+        // Obere Zeile: Name, Datum, Herz
         const headerLine= document.createElement('div');
         headerLine.className='header-line';
 
@@ -403,20 +403,16 @@ const firebaseConfig = {
 
         const metaSpan= document.createElement('span');
         metaSpan.className='comment-meta';
-        metaSpan.textContent= ` (${ new Date(commentObj.timestamp).toLocaleString('de-DE') })`;
+        metaSpan.textContent= `(${ new Date(commentObj.timestamp).toLocaleString('de-DE') })`;
 
         // Herz-Button
         const heartBtn= document.createElement('button');
         heartBtn.className='like-btn';
         const isLiked= (commentObj.likes||[]).includes(loggedInEmail||loggedInUser);
-        if(isLiked) {
-          heartBtn.classList.add('like-filled');
-        } else {
-          heartBtn.classList.add('like-outlined');
-        }
+        if(isLiked) heartBtn.classList.add('like-filled');
+        else heartBtn.classList.add('like-outlined');
         heartBtn.onclick= ()=> toggleLike(commentObj);
 
-        // Füge Name + Datum + Herz in die header-line
         headerLine.appendChild(userSpan);
         headerLine.appendChild(metaSpan);
         headerLine.appendChild(heartBtn);
@@ -429,7 +425,7 @@ const firebaseConfig = {
         textEl.textContent= commentObj.text;
         bubble.appendChild(textEl);
 
-        // "Du wurdest X mal geherzt!" 
+        // "Du wurdest X mal geherzt!"
         const count= (commentObj.likes||[]).length;
         const heartLabel= document.createElement('div');
         heartLabel.className='heart-label';
@@ -444,16 +440,14 @@ const firebaseConfig = {
           bubble.appendChild(replyEl);
         }
 
-        // Wenn Admin -> "Antwort"-Button unten
+        // Admin -> "Antwort"-Button unten
         if(canRemove){
           const actions= document.createElement('div');
           actions.className='comment-actions';
-
           const replyBtn= document.createElement('button');
           replyBtn.textContent='Antwort';
           replyBtn.onclick= ()=> respondToComment(commentObj);
           actions.appendChild(replyBtn);
-
           bubble.appendChild(actions);
         }
 
@@ -494,7 +488,6 @@ const firebaseConfig = {
         });
         showNotification('Kommentar hinzugefügt','info');
         input.value='';
-        // Nur neu laden (Event)
         loadEvent();
       } catch(err){
         showNotification('Fehler beim Kommentar: '+err.message,'error');
