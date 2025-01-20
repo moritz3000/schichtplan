@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
   <title>Goethebunker Schichtplanung – Event Details</title>
 
@@ -46,6 +47,20 @@
       font-weight: bold;
       font-size: 1.2em;
     }
+    /* Zurück-Button */
+    #backButton {
+      text-decoration: none;
+      color: var(--white);
+      background-color: #0056b3;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      border: none;
+      display: inline-block;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
     #welcomeUser {
       font-size: 1em;
       margin-right: 10px;
@@ -71,7 +86,7 @@
       font-size: 1em;
     }
     textarea {
-      resize: none; /* nicht skalierbar */
+      resize: none;
     }
 
     button {
@@ -83,7 +98,6 @@
       cursor: pointer;
       font-size: 1em;
       margin-bottom: 16px;
-      /* Keine Hover-Effekte */
     }
 
     .event {
@@ -100,9 +114,84 @@
       color: var(--primary-color);
     }
 
+    /* Chat-Bubble-Layout */
+    .chat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-bubble {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 15px;
+      padding: 10px 12px;
+      max-width: 280px; 
+      overflow-wrap: break-word;
+    }
+    .me {
+      align-self: flex-end;
+      background-color: #d4f7d0;
+    }
+    .other {
+      align-self: flex-start;
+      background-color: #eee;
+    }
+    .chat-remove-x {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      border: none;
+      font-size: 1em;
+      color: #999;
+      cursor: pointer;
+    }
+    .chat-remove-x:hover {
+      color: #333;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .chat-meta {
+      font-size: 0.8em;
+      color: #888;
+    }
+    .like-btn {
+      border: none; 
+      background: none; 
+      cursor: pointer;
+      font-size: 1em;
+      color: #000;
+    }
+    .like-outlined::before {
+      content: "♡";
+    }
+    .like-filled::before {
+      content: "♥";
+      color: #e53939;
+    }
+    /* Dezent + klein "Dein Kommentar wurde x mal geherzt." */
+    .heart-line {
+      font-size: 0.75em;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    #notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      max-width: 90%;
+      z-index: 2000;
+    }
     .notification-message {
       background-color: #28a745;
-      color: var(--white);
+      color: #fff;
       padding: 10px 20px;
       margin-bottom: 10px;
       border-radius: var(--border-radius);
@@ -114,13 +203,6 @@
     }
     .notification-info {
       background-color: #17a2b8;
-    }
-    #notification {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      max-width: 90%;
-      z-index: 2000;
     }
 
     footer {
@@ -146,75 +228,22 @@
       font-size: 0.9em;
     }
 
-    /* Chat-Bubble-Layout für Kommentare */
-    .chat-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .chat-bubble {
-      position: relative;
-      border: 1px solid #ddd;
-      border-radius: 15px;
-      padding: 10px 12px;
-      max-width: 280px; /* Bubble-Breite */
-      overflow-wrap: break-word;
-      margin-bottom: 6px;
-    }
-    .me {
-      align-self: flex-end;
-      background-color: #d4f7d0;
-    }
-    .other {
-      align-self: flex-start;
-      background-color: #eee;
-    }
-    .chat-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-weight: bold;
-    }
-    .chat-meta {
-      font-size: 0.8em;
-      color: #888;
-    }
-    /* Like-Button */
-    .like-btn {
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-size: 1em;
-      margin-left: 8px; /* etwas Abstand */
-      color: #000;
-    }
-    .like-outlined::before {
-      content: "♡";
-    }
-    .like-filled::before {
-      content: "♥";
-      color: #e53939;
-    }
-
-    .chat-remove-x {
-      position: absolute;
-      top: 6px;
-      right: 8px;
-      background: none;
-      border: none;
-      font-size: 1em;
-      color: #999;
-      cursor: pointer;
-    }
-    .chat-remove-x:hover {
-      color: #333;
+    @media (max-width: 768px) {
+      .event {
+        padding: 16px;
+      }
+      .chat-bubble {
+        max-width: 80%; /* anpassen für Mobile */
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">Goethebunker Schichtplanung</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <a id="backButton" href="index.html">&laquo; Zurück</a>
+      <div class="title">Goethebunker Schichtplanung</div>
+    </div>
     <div id="welcomeUser" style="display:none;">Willkommen!</div>
   </header>
 
@@ -229,16 +258,15 @@
       <p id="detailText">Eventname, Datum, Mitarbeiter etc.</p>
     </div>
 
-    <!-- (2) WICHTIGE INFOS (Admin kann bearbeiten, alle sehen) -->
+    <!-- (2) WICHTIGE INFOS -->
     <div class="event" id="infoContainer">
       <h3>Wichtige Infos</h3>
-      <p id="infoText">Noch keine Infos ...</p>
-      <!-- Nur Admin sieht die Textarea + Button -->
+      <p id="infoText">Noch keine Infos...</p>
       <textarea id="infoInput" rows="3" placeholder="Infos eintragen..." style="display:none;"></textarea>
       <button id="saveInfoBtn" style="display:none;">Speichern</button>
     </div>
 
-    <!-- (3) KOMMENTAR-BEREICH / Chat -->
+    <!-- (3) KOMMENTARE (Chat) -->
     <div class="event" id="commentContainer">
       <h3>Kommentare</h3>
       <div class="chat-list" id="commentList"></div>
@@ -262,7 +290,7 @@
       getAuth, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Firebase Config
+    // Deine Firebase-Konfiguration
     const firebaseConfig = {
       apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
       authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -281,60 +309,55 @@
     let canRemove = false;  // Admin?
     let currentEventId = null;
 
-    function showNotification(msg,type='success') {
-      const notiBox = document.getElementById('notification');
-      const div = document.createElement('div');
-      div.className = 'notification-message';
+    // Notifikation
+    function showNotification(msg, type='success'){
+      const nBox= document.getElementById('notification');
+      const div= document.createElement('div');
+      div.className= 'notification-message';
       if(type==='error') div.classList.add('notification-error');
       else if(type==='info') div.classList.add('notification-info');
-      div.textContent = msg;
-      notiBox.appendChild(div);
+      div.textContent= msg;
+      nBox.appendChild(div);
       setTimeout(()=>{
         div.style.opacity='0';
         setTimeout(()=>div.remove(),500);
       },3000);
     }
 
+    // Datum
     function setCurrentDate() {
-      const el = document.getElementById('currentDate');
-      const d = new Date();
-      const opts = { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
-      el.textContent = d.toLocaleDateString('de-DE', opts);
+      const el= document.getElementById('currentDate');
+      const today= new Date();
+      const opts= {day:'2-digit', month:'2-digit', year:'numeric', weekday:'long'};
+      el.textContent= today.toLocaleDateString('de-DE', opts);
     }
 
-    // ========== Event laden ==========
-    async function loadEvent() {
+    // Lade das Event
+    async function loadEvent(){
       if(!currentEventId){
-        document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
+        document.body.innerHTML= "<p>Keine Event-ID angegeben</p>";
         return;
       }
-      const ref= doc(db, "events", currentEventId);
+      const ref= doc(db,"events", currentEventId);
       const snap= await getDoc(ref);
       if(!snap.exists()){
-        document.body.innerHTML="<p>Event nicht gefunden</p>";
+        document.body.innerHTML= "<p>Event nicht gefunden</p>";
         return;
       }
       const evData= snap.data();
-      console.log("[loadEvent] Event=", evData);
-
-      // (1) Details Container
       renderDetails(evData);
-
-      // (2) Wichtige Infos
       renderInfos(evData);
-
-      // (3) Kommentare (Chat)
       renderComments(evData.comments||[]);
     }
 
-    // ========== (1) Veranstaltungs-Details ==========
-    function renderDetails(evData) {
+    // (1) Details
+    function renderDetails(evData){
       let detailHTML="";
       detailHTML += `<strong>Event-Name:</strong> ${evData.name || '???'}<br/>`;
 
       if(evData.datum){
-        const dObj= new Date(evData.datum);
-        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+        const d= new Date(evData.datum);
+        const dStr= d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
         detailHTML += `<strong>Datum:</strong> ${dStr}<br/>`;
       }
       if(evData.startzeit){
@@ -345,65 +368,56 @@
       } else {
         detailHTML += `<strong>Mitarbeiter:</strong> (noch niemand eingetragen)<br/>`;
       }
-
       document.getElementById('detailText').innerHTML= detailHTML;
     }
 
-    // ========== (2) Wichtige Infos ==========
+    // (2) Wichtige Infos
     function renderInfos(evData){
-      const infoTextEl= document.getElementById('infoText');
-      const infoInput= document.getElementById('infoInput');
-      const infoBtn= document.getElementById('saveInfoBtn');
-
-      const infoStr= evData.importantInfo || "Noch keine Infos eingetragen";
-      // Zeilenumbrüche als <br> 
-      infoTextEl.innerHTML = infoStr.replace(/\n/g, '<br>');
+      const infoText= evData.importantInfo || "Noch keine Infos...";
+      // Absätze: \n => <br>
+      document.getElementById('infoText').innerHTML= infoText.replace(/\n/g,'<br>');
 
       if(canRemove){
-        infoInput.style.display='block';
-        infoBtn.style.display='inline-block';
-        infoInput.value= infoStr; 
-      } else {
-        infoInput.style.display='none';
-        infoBtn.style.display='none';
+        const inp= document.getElementById('infoInput');
+        const btn= document.getElementById('saveInfoBtn');
+        inp.style.display='block';
+        btn.style.display='inline-block';
+        inp.value= infoText; 
       }
     }
-
-    // Speichern der Infos
     async function saveInfos(){
       if(!canRemove) return;
       const newText= document.getElementById('infoInput').value.trim();
       const ref= doc(db,"events", currentEventId);
-      try {
+      try{
         await updateDoc(ref,{ importantInfo: newText });
-        showNotification("Infos gespeichert");
-        // Absätze erhalten => .replace(/\n/g, '<br>')
-        document.getElementById('infoText').innerHTML= newText ? newText.replace(/\n/g, '<br>') : "Noch keine Infos eingetragen";
+        showNotification("Wichtige Infos gespeichert");
+        document.getElementById('infoText').innerHTML= newText.replace(/\n/g,'<br>') || "Noch keine Infos...";
       } catch(err){
-        showNotification("Fehler beim Speichern: "+err.message,'error');
-        console.error(err);
+        showNotification("Fehler: "+err.message,'error');
       }
     }
 
-    // ========== (3) Kommentare (Chat) ==========
+    // (3) Kommentare (chronologisch, Chat-Bubbles, Like-Button)
     function renderComments(commentArr){
+      // Ältester zuerst
+      const sorted= commentArr.slice().sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
+
       const cList= document.getElementById('commentList');
-      cList.innerHTML='';
-      if(!Array.isArray(commentArr) || commentArr.length===0){
+      cList.innerHTML= '';
+      if(sorted.length===0){
         cList.innerHTML= "<p>Noch keine Kommentare</p>";
         return;
       }
-
-      commentArr.forEach(cObj=>{
-        // Bubble
+      sorted.forEach(cObj=>{
         const bubble= document.createElement('div');
         bubble.classList.add('chat-bubble');
 
-        // Rechts/links
+        // me / other
         if(cObj.user===loggedInUser) bubble.classList.add('me');
         else bubble.classList.add('other');
 
-        // Admin-löschen (x)
+        // Admin-Löschen
         if(canRemove){
           const xBtn= document.createElement('button');
           xBtn.className='chat-remove-x';
@@ -412,40 +426,42 @@
           bubble.appendChild(xBtn);
         }
 
-        // Header (Name + Datum)
+        // Header
         const header= document.createElement('div');
         header.className='chat-header';
-
+        
         const userSpan= document.createElement('span');
         userSpan.textContent= cObj.user;
-        header.appendChild(userSpan);
 
         const metaSpan= document.createElement('span');
         metaSpan.className='chat-meta';
         const dt= new Date(cObj.timestamp).toLocaleString('de-DE');
         metaSpan.textContent= `(${dt})`;
-        header.appendChild(metaSpan);
 
-        // Like-Button
         const likeBtn= document.createElement('button');
         likeBtn.className='like-btn';
-        const userEmail= loggedInUser;
-        const likesArr= cObj.likes||[];
-        const isLiked= likesArr.includes(userEmail);
+        const likesArr= cObj.likes || [];
+        const isLiked= likesArr.includes(loggedInUser);
         likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
         likeBtn.onclick= ()=> toggleLike(cObj);
-        header.appendChild(likeBtn);
 
+        header.appendChild(userSpan);
+        header.appendChild(metaSpan);
+        header.appendChild(likeBtn);
         bubble.appendChild(header);
 
-        // Text mit Zeilenumbrüchen
+        // Text
         const textDiv= document.createElement('div');
-        const txt= cObj.text || "";
-        textDiv.innerHTML= txt.replace(/\n/g,'<br>'); 
+        const rawTxt= cObj.text || "";
+        textDiv.innerHTML= rawTxt.replace(/\n/g, '<br>'); // Absätze
         bubble.appendChild(textDiv);
 
-        // Evtl. "Du wurdest X mal geherzt" - optional
-        // ...
+        // "Dein Kommentar wurde x mal geherzt"
+        const likesCount= (cObj.likes||[]).length;
+        const heartLine= document.createElement('div');
+        heartLine.className='heart-line';
+        heartLine.textContent= `Dein Kommentar wurde ${likesCount} mal geherzt.`;
+        bubble.appendChild(heartLine);
 
         cList.appendChild(bubble);
       });
@@ -453,42 +469,39 @@
 
     async function sendComment(){
       if(!loggedInUser){
-        showNotification("Bitte einloggen, um zu kommentieren",'error');
+        showNotification("Bitte erst einloggen",'error');
         return;
       }
       const input= document.getElementById('commentInput');
-      const text= input.value.trim();
-      if(!text){
+      const txt= input.value.trim();
+      if(!txt){
         showNotification("Kommentar ist leer",'error');
         return;
       }
-      const newComment= {
+      const newCmt= {
         id: String(Date.now()),
         user: loggedInUser,
-        text,
+        text: txt,
         timestamp: new Date().toISOString(),
         likes:[]
       };
+      const ref= doc(db,"events", currentEventId);
       try {
-        const ref= doc(db,"events", currentEventId);
-        await updateDoc(ref, {
-          comments: arrayUnion(newComment)
-        });
+        await updateDoc(ref, { comments: arrayUnion(newCmt) });
         showNotification("Kommentar hinzugefügt");
         input.value='';
-        loadEvent(); // neu laden => neu rendern
+        loadEvent();
       } catch(err){
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
 
-    // Kommentar löschen (Admin)
     async function removeComment(commentObj){
       if(!canRemove) return;
       if(!confirm("Nachricht wirklich löschen?")) return;
-      try {
-        const ref= doc(db,"events", currentEventId);
-        await updateDoc(ref,{ comments: arrayRemove(commentObj) });
+      const ref= doc(db,"events", currentEventId);
+      try{
+        await updateDoc(ref, { comments: arrayRemove(commentObj) });
         showNotification("Nachricht gelöscht");
         loadEvent();
       } catch(err){
@@ -496,39 +509,47 @@
       }
     }
 
-    // Like toggeln
-    async function toggleLike(commentObj){
+    async function toggleLike(cObj){
       if(!loggedInUser){
         showNotification("Bitte einloggen zum Liken",'error');
         return;
       }
-      const userEmail= loggedInUser;
-      const oldLikes= Array.isArray(commentObj.likes)? [...commentObj.likes]:[];
-      const idx= oldLikes.indexOf(userEmail);
+      const oldLikes= Array.isArray(cObj.likes)? [...cObj.likes]:[];
+      const idx= oldLikes.indexOf(loggedInUser);
       if(idx>=0){
-        oldLikes.splice(idx,1); // remove
+        oldLikes.splice(idx,1);
       } else {
-        oldLikes.push(userEmail);
+        oldLikes.push(loggedInUser);
       }
       const updated= {
-        ...commentObj,
+        ...cObj,
         likes: oldLikes
       };
-      try {
-        const ref= doc(db,"events", currentEventId);
-        await updateDoc(ref, {
-          comments: arrayRemove(commentObj)
-        });
-        await updateDoc(ref, {
-          comments: arrayUnion(updated)
-        });
+      const ref= doc(db,"events", currentEventId);
+      try{
+        await updateDoc(ref, { comments: arrayRemove(cObj) });
+        await updateDoc(ref, { comments: arrayUnion(updated) });
         loadEvent();
       } catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
     }
 
-    // ========== Start ==========
+    // Admin: Save Infos
+    async function saveInfos(){
+      if(!canRemove) return;
+      const val= document.getElementById('infoInput').value.trim();
+      const ref= doc(db,"events", currentEventId);
+      try{
+        await updateDoc(ref, { importantInfo: val });
+        showNotification("Wichtige Infos gespeichert");
+        document.getElementById('infoText').innerHTML= val.replace(/\n/g,'<br>') || "Noch keine Infos...";
+      }catch(err){
+        showNotification("Fehler: "+err.message,'error');
+      }
+    }
+
+    // Auth
     onAuthStateChanged(auth, user=>{
       if(user){
         loggedInUser= user.displayName || user.email;
@@ -549,7 +570,7 @@
         document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
-      // Button-Handler
+
       document.getElementById('saveInfoBtn').addEventListener('click', saveInfos);
       document.getElementById('sendCommentBtn').addEventListener('click', sendComment);
     });
