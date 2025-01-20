@@ -2,11 +2,11 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Für Web-App und kein Zoomen -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  
+  <!-- Kein Zoomen, Web-App-fähig -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+
   <title>Event-Details - Goethebunker</title>
 
   <style>
@@ -15,26 +15,23 @@
       margin: 0; 
       background: #f5f5f5; 
       color: #333;
-      /* Ein zentrales Wrapper-Padding kann man beibehalten, 
-         damit es auf Mobilgeräten nicht ganz an den Rand stößt */
-      padding: 20px;
+      padding: 20px; /* Padding rundherum */
     }
 
-    /* Haupt-Wrapper für Responsive Layout */
     .wrapper {
-      max-width: 600px; 
+      max-width: 600px;
       width: 100%;
-      margin: 0 auto; 
+      margin: 0 auto; /* Zentrieren */
     }
 
     a {
       color: #007bff;
       text-decoration: none;
     }
-    h1 { 
+    h1 {
       font-size: 1.4em; 
       color: #007bff;
-      margin: 0 0 10px 0;
+      margin: 0 0 10px;
     }
 
     .top-bar {
@@ -53,7 +50,6 @@
       background: #fff;
     }
 
-    /* Container für Event-Daten */
     .eventDetails {
       background: #fff;
       border: 1px solid #ccc;
@@ -71,8 +67,7 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 1em;
-      margin-top: 6px; /* leichter Abstand nach oben */
-      /* Keine Hover-Effekte */
+      margin-top: 6px; 
     }
 
     /* Kommentarbereich */
@@ -82,7 +77,6 @@
       border-radius: 8px;
       padding: 10px;
     }
-
     .comment-list {
       margin-bottom: 14px;
       display: flex;
@@ -96,7 +90,7 @@
       border-radius: 6px;
       padding: 8px 10px;
       position: relative;
-      /* Minimale Breite, max. 192px, overflow wrap */
+
       min-width: 160px;
       max-width: 192px;
       overflow-wrap: break-word;
@@ -116,7 +110,6 @@
       color: #333;
     }
 
-    /* Name + Datum + Herz in einer Zeile */
     .comment-user {
       font-weight: bold;
     }
@@ -125,13 +118,18 @@
       color: #888;
       margin-left: 6px;
     }
+
+    .comment-text {
+      margin-top: 4px;
+    }
+
     .like-btn {
       border: none; 
       background: none; 
       cursor: pointer;
       font-size: 1em; 
       color: #000;
-      margin-left: 6px; /* etwas Abstand */
+      margin-left: 6px;
     }
     .like-outlined::before {
       content: "♡";
@@ -141,24 +139,20 @@
       color: #e53939;
     }
 
-    /* "Du wurdest X mal geherzt!" -> leicht grau, kleiner Abstand */
+    /* "Du wurdest x mal geherzt" in Grau */
     .heart-label {
-      display: block; /* auf neuer Zeile unter dem Kommentar-Text */
-      margin-top: 4px; 
-      color: #888; 
+      display: block;
+      margin-top: 4px;
+      color: #888;
       font-size: 0.85em;
     }
 
-    .comment-text {
-      margin-top: 4px;
-    }
     .admin-reply {
       margin-top: 4px;
       color: #17a2b8;
       font-weight: bold;
     }
 
-    /* Admin-Buttons unten */
     .comment-actions {
       display: flex;
       gap: 8px;
@@ -169,7 +163,6 @@
       font-size: 0.8em;
     }
 
-    /* Modernere Inputs + Textareas */
     input, textarea {
       width: 100%; 
       font-size: 1em;
@@ -179,19 +172,17 @@
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
       margin-bottom: 6px;
     }
-    /* kein Skalieren */
     textarea {
-      resize: none;
+      resize: none; /* Nicht skalierbar */
     }
 
-    /* Für 1-Zeiliges textarea (192px Breit) */
     #commentInput {
       width: 192px;
       max-width: 192px;
-      height: auto;
+      height: auto; 
     }
 
-    /* Notifikationen */
+    /* Notification-Bereich */
     #notification {
       position: fixed;
       top: 10px;
@@ -217,33 +208,31 @@
   </style>
 </head>
 <body>
-  <!-- Notification-Bereich -->
   <div id="notification"></div>
 
   <div class="wrapper">
-    <!-- Kopfzeile mit Zurück-Link -->
+    <!-- Kopfzeile -->
     <div class="top-bar">
       <a class="back-link" href="index.html">&laquo; Zurück</a>
       <h1>Event-Details</h1>
     </div>
 
-    <!-- Event-Daten -->
+    <!-- Event-Container -->
     <div id="eventContainer" class="eventDetails">
-      <!-- Dynamische Befüllung per JS -->
+      <!-- Dynamische Füllung -->
     </div>
 
-    <!-- Kommentarbereich -->
+    <!-- Kommentar-Bereich -->
     <div id="commentSection" class="commentSection" style="display:none;">
       <h3>Kommentare</h3>
       <div class="comment-list" id="commentList"></div>
 
-      <!-- Textfeld + Button darunter -->
       <textarea id="commentInput" rows="1" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
       <button id="addCommentButton">Kommentar absenden</button>
     </div>
   </div>
 
-  <!-- Firebase + JS -->
+  <!-- Firebase / JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
@@ -254,7 +243,7 @@
       getAuth, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Deine Firebase Config
+    // ========== Firebase-Konfig anpassen! ==========
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -276,30 +265,40 @@ const firebaseConfig = {
 
     let currentEventId = null;
 
-    // Notification
-    function showNotification(message, type='success') {
+    // Konsolen-Logs für Debug
+    // Notification-Funktion
+    function showNotification(msg,type='success') {
+      console.log("[Notification]", type, msg); // Debug
       const container = document.getElementById('notification');
-      const notif = document.createElement('div');
-      notif.className='notification-message';
-      if(type==='error') notif.classList.add('notification-error');
-      else if(type==='info') notif.classList.add('notification-info');
-      notif.textContent=message;
-      container.appendChild(notif);
+      const div = document.createElement('div');
+      div.className='notification-message';
+      if(type==='error') div.classList.add('notification-error');
+      else if(type==='info') div.classList.add('notification-info');
+      div.textContent= msg;
+      container.appendChild(div);
       setTimeout(()=>{
-        notif.style.opacity='0';
-        setTimeout(()=>notif.remove(),500);
+        div.style.opacity='0';
+        setTimeout(()=>div.remove(),500);
       },3000);
     }
 
-    // Seite NICHT reloaden, sondern nur neu laden
+    // Event neu laden, ohne Page-Reload
     async function loadEvent() {
+      console.log("[loadEvent] ID =", currentEventId);
+      if(!currentEventId) {
+        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        return;
+      }
       const eventDocRef = doc(db, "events", currentEventId);
       const snapshot = await getDoc(eventDocRef);
+      console.log("[loadEvent] snapshot.exists=", snapshot.exists());
       if(!snapshot.exists()) {
-        document.body.innerHTML = `<p>Event nicht gefunden.</p>`;
+        document.getElementById('eventContainer').innerHTML = "<p>Event nicht gefunden.</p>";
         return;
       }
       const eventData = snapshot.data();
+      console.log("[loadEvent] eventData =", eventData);
+
       renderEventDetails(eventData);
       document.getElementById('commentSection').style.display='block';
     }
@@ -308,15 +307,17 @@ const firebaseConfig = {
       const cont = document.getElementById('eventContainer');
       cont.innerHTML='';
 
-      const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+      // Name + Datum
+      const dateStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
       const h2 = document.createElement('h2');
       h2.textContent= ev.name;
       cont.appendChild(h2);
 
       const pDate = document.createElement('p');
-      pDate.innerHTML = `<strong>${dStr}</strong> • Start: ${ev.startzeit||''} Uhr`;
+      pDate.innerHTML = `<strong>${dateStr}</strong> • Start: ${ev.startzeit||''} Uhr`;
       cont.appendChild(pDate);
 
+      // Mitarbeiter
       const staffP = document.createElement('p');
       staffP.textContent='Verfügbare Mitarbeiter:';
       cont.appendChild(staffP);
@@ -327,7 +328,7 @@ const firebaseConfig = {
         sp.style.display='inline-block';
         sp.style.marginRight='6px';
         sp.textContent=name;
-        if(canRemove){
+        if(canRemove) {
           const xBtn = document.createElement('button');
           xBtn.textContent='x';
           xBtn.style.marginLeft='4px';
@@ -338,51 +339,46 @@ const firebaseConfig = {
       });
       cont.appendChild(staffDiv);
 
-      // Kommentare sortieren (ältester zuerst)
-      let sortedComments = (ev.comments||[]).slice();
+      // Kommentare sortieren
+      let sortedComments = (ev.comments || []).slice();
       sortedComments.sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
       renderComments(sortedComments);
     }
 
     function renderComments(commentsArr){
-      const listEl = document.getElementById('commentList');
+      const listEl= document.getElementById('commentList');
       listEl.innerHTML='';
 
       commentsArr.forEach(commentObj=>{
-        const item = document.createElement('div');
+        const item= document.createElement('div');
         item.className='comment-item';
 
-        // Admin-löschen
+        // Admin-Löschen
         if(canRemove){
-          const removeX = document.createElement('button');
+          const removeX= document.createElement('button');
           removeX.className='comment-remove-x';
           removeX.textContent='x';
           removeX.onclick= ()=> removeComment(commentObj);
           item.appendChild(removeX);
         }
 
-        // Zeile: Name (Datum), Herz-Button
-        const userRow = document.createElement('div');
-        
-        const userSpan = document.createElement('span');
+        // Zeile: Name (Datum), Herz
+        const userRow= document.createElement('div');
+        const userSpan= document.createElement('span');
         userSpan.className='comment-user';
         userSpan.textContent= commentObj.user;
 
-        const metaSpan = document.createElement('span');
+        const metaSpan= document.createElement('span');
         metaSpan.className='comment-meta';
-        metaSpan.textContent= ` (${ new Date(commentObj.timestamp).toLocaleString('de-DE') })`;
-
+        metaSpan.textContent= " ("+ new Date(commentObj.timestamp).toLocaleString('de-DE') +")";
         userSpan.appendChild(metaSpan);
 
-        // Herz
-        const heartBtn = document.createElement('button');
+        // Herz-Button
+        const heartBtn= document.createElement('button');
         heartBtn.className='like-btn';
         const isLiked = (commentObj.likes||[]).includes(loggedInEmail||loggedInUser);
-        if(isLiked){
-          heartBtn.classList.add('like-filled');
-        } else {
-          heartBtn.classList.add('like-outlined');
-        }
+        if(isLiked) heartBtn.classList.add('like-filled');
+        else heartBtn.classList.add('like-outlined');
         heartBtn.onclick= ()=> toggleLike(commentObj);
 
         userRow.appendChild(userSpan);
@@ -390,37 +386,35 @@ const firebaseConfig = {
 
         item.appendChild(userRow);
 
-        // Text
-        const textDiv = document.createElement('div');
+        // Kommentar-Text
+        const textDiv= document.createElement('div');
         textDiv.className='comment-text';
         textDiv.textContent= commentObj.text;
         item.appendChild(textDiv);
 
-        // "Du wurdest X mal geherzt!" in grau, unter dem Kommentar
-        const count = (commentObj.likes||[]).length;
-        const heartLabel = document.createElement('div');
+        // "Du wurdest X mal geherzt!"
+        const count= (commentObj.likes||[]).length;
+        const heartLabel= document.createElement('div');
         heartLabel.className='heart-label';
         heartLabel.textContent= `Du wurdest ${count} mal geherzt!`;
         item.appendChild(heartLabel);
 
-        // Admin-Antwort
+        // Admin-Reply
         if(commentObj.adminReply && commentObj.adminReply.trim().length>0){
-          const replyEl = document.createElement('div');
-          replyEl.className='admin-reply';
-          replyEl.textContent='Antwort vom Admin: '+commentObj.adminReply;
-          item.appendChild(replyEl);
+          const rEl= document.createElement('div');
+          rEl.className='admin-reply';
+          rEl.textContent= 'Antwort vom Admin: '+ commentObj.adminReply;
+          item.appendChild(rEl);
         }
 
-        // Admin-Buttons unten
+        // Unten Admin-Buttons
         if(canRemove){
-          const actions = document.createElement('div');
+          const actions= document.createElement('div');
           actions.className='comment-actions';
-
-          const replyBtn = document.createElement('button');
+          const replyBtn= document.createElement('button');
           replyBtn.textContent='Antwort';
           replyBtn.onclick= ()=> respondToComment(commentObj);
           actions.appendChild(replyBtn);
-
           item.appendChild(actions);
         }
 
@@ -428,17 +422,16 @@ const firebaseConfig = {
       });
     }
 
-    /* Klick-Funktionen 
-       -> NICHT reloaden, sondern nur loadEvent() 
-    */
-
+    /* ==============================
+       Klick-Funktionen (ohne Reload) 
+       ============================== */
     async function addComment(){
       if(!loggedInUser){
         showNotification('Bitte einloggen','error');
         return;
       }
-      const input = document.getElementById('commentInput');
-      const text = input.value.trim();
+      const input= document.getElementById('commentInput');
+      const text= input.value.trim();
       if(!text){
         showNotification('Kommentar ist leer','error');
         return;
@@ -447,7 +440,7 @@ const firebaseConfig = {
         showNotification('Max 160 Zeichen','error');
         return;
       }
-      const newComm = {
+      const newComm={
         id: String(Date.now()),
         user: loggedInUser,
         text,
@@ -456,13 +449,13 @@ const firebaseConfig = {
         likes:[]
       };
       try {
-        const ref = doc(db,"events", currentEventId);
+        const ref= doc(db,"events",currentEventId);
         await updateDoc(ref, {
           comments: arrayUnion(newComm)
         });
         showNotification('Kommentar hinzugefügt','info');
         input.value='';
-        // Nur neu laden (Daten), NICHT reload
+        // Nur Daten neu laden
         loadEvent();
       } catch(err){
         showNotification('Fehler beim Kommentar: '+err.message,'error');
@@ -470,7 +463,7 @@ const firebaseConfig = {
     }
 
     async function addCommentAndReload(){
-      await addComment();
+      addComment();
     }
 
     async function removeComment(commentObj){
@@ -490,15 +483,15 @@ const firebaseConfig = {
 
     async function respondToComment(commentObj){
       if(!canRemove)return;
-      const reply = prompt('Admin-Antwort:', commentObj.adminReply||'');
+      const reply= prompt('Admin-Antwort:', commentObj.adminReply||'');
       if(reply===null)return;
-      const updated = {...commentObj, adminReply:reply};
+      const updated= {...commentObj, adminReply:reply };
       try {
-        const ref= doc(db,"events",currentEventId);
+        const ref= doc(db,"events", currentEventId);
         // Altes entfernen
-        await updateDoc(ref,{comments:arrayRemove(commentObj)});
+        await updateDoc(ref, { comments: arrayRemove(commentObj) });
         // Neues einfügen
-        await updateDoc(ref,{comments:arrayUnion(updated)});
+        await updateDoc(ref, { comments: arrayUnion(updated) });
         showNotification('Antwort gespeichert','info');
         loadEvent();
       } catch(err){
@@ -511,19 +504,21 @@ const firebaseConfig = {
         showNotification('Bitte einloggen zum Liken','error');
         return;
       }
-      const userId = loggedInEmail || loggedInUser;
-      const newLikes = Array.isArray(commentObj.likes)? [...commentObj.likes]:[];
+      const userId= loggedInEmail || loggedInUser;
+      const newLikes= Array.isArray(commentObj.likes)? [...commentObj.likes]:[];
       if(newLikes.includes(userId)){
         // schon geliked -> entfernen
         newLikes.splice(newLikes.indexOf(userId),1);
       } else {
         newLikes.push(userId);
       }
-      const updated = {...commentObj, likes:newLikes};
+      const updated= {...commentObj, likes:newLikes};
       try {
         const ref= doc(db,"events", currentEventId);
-        await updateDoc(ref,{ comments: arrayRemove(commentObj) });
-        await updateDoc(ref,{ comments: arrayUnion(updated) });
+        // Alte Version raus
+        await updateDoc(ref, { comments: arrayRemove(commentObj) });
+        // Neue Version rein
+        await updateDoc(ref, { comments: arrayUnion(updated) });
         showNotification('Like aktualisiert','info');
         loadEvent();
       } catch(err){
@@ -549,14 +544,28 @@ const firebaseConfig = {
     // Auth
     onAuthStateChanged(auth, user=>{
       if(user){
-        loggedInUser = user.displayName || user.email;
+        loggedInUser= user.displayName || user.email;
         loggedInEmail= user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
       } else {
-        loggedInUser=null;
-        loggedInEmail=null;
-        canRemove=false;
+        loggedInUser= null;
+        loggedInEmail= null;
+        canRemove= false;
       }
+      console.log("[AuthStateChanged] loggedInUser=", loggedInUser, "canRemove=", canRemove);
+    });
+
+    // Start
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      const params= new URLSearchParams(window.location.search);
+      currentEventId= params.get('id');
+      if(!currentEventId){
+        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        return;
+      }
+      await loadEvent();
+
+      document.getElementById('addCommentButton').addEventListener('click', addCommentAndReload);
     });
   </script>
 </body>
