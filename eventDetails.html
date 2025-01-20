@@ -29,7 +29,7 @@
       background-color: var(--background-color);
       color: #333;
       margin: 0;
-      padding-bottom: 60px; 
+      padding-bottom: 60px;
     }
 
     header {
@@ -126,7 +126,7 @@
       border: 1px solid #ddd;
       border-radius: 15px;
       padding: 10px 12px;
-      max-width: 280px; 
+      max-width: 280px;
       overflow-wrap: break-word;
     }
     .me {
@@ -137,19 +137,6 @@
       align-self: flex-start;
       background-color: #eee;
     }
-    .chat-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-weight: bold;
-    }
-    .chat-meta {
-      font-size: 0.8em;
-      color: #888;
-    }
-
-    /* Admin-Löschen */
     .chat-remove-x {
       position: absolute; 
       top: 6px; 
@@ -164,7 +151,19 @@
       color: #333;
     }
 
-    /* Like-Button */
+    .chat-header {
+      display: flex;
+      width: 100%;
+      justify-content: space-between; /* Herz rückt nach rechts */
+      align-items: center;
+      margin-bottom: 2px; /* engerer Abstand zur Nachricht */
+    }
+
+    .chat-meta {
+      font-size: 0.8em;
+      color: #888;
+    }
+
     .like-btn {
       border: none; 
       background: none; 
@@ -180,14 +179,12 @@
       color: #e53939;
     }
 
-    /* "Dein Kommentar wurde x mal geherzt" */
     .heart-line {
       font-size: 0.75em;
       color: #777;
-      margin-top: 4px;
+      margin-top: 8px; /* mehr Abstand */
     }
 
-    /* Notifications */
     #notification {
       position: fixed;
       top: 10px;
@@ -297,7 +294,7 @@
       getAuth, onAuthStateChanged, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Firebase Config
+    // Deine Firebase-Konfiguration
     const firebaseConfig = {
       apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
       authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -318,7 +315,7 @@
     let currentEventId = null;
 
     // Benachrichtigungen
-    function showNotification(msg,type='success'){
+    function showNotification(msg, type='success'){
       const container= document.getElementById('notification');
       const div= document.createElement('div');
       div.className='notification-message';
@@ -335,40 +332,40 @@
     function setCurrentDate(){
       const el= document.getElementById('currentDate');
       const d= new Date();
-      const opts={ day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'};
+      const opts={day:'2-digit', month:'2-digit', year:'2-digit', weekday:'long'};
       el.textContent= d.toLocaleDateString('de-DE', opts);
     }
 
-    // (A) Lade Event aus Firestore
+    // (A) Lade Event
     async function loadEvent(){
       if(!currentEventId){
-        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        document.body.innerHTML= "<p>Keine Event-ID angegeben</p>";
         return;
       }
-      const ref= doc(db,"events", currentEventId);
+      const ref= doc(db,"events",currentEventId);
       const snap= await getDoc(ref);
       if(!snap.exists()){
-        document.body.innerHTML= "<p>Event nicht gefunden.</p>";
+        document.body.innerHTML= "<p>Event nicht gefunden</p>";
         return;
       }
       const evData= snap.data();
-      console.log("Event-Daten:", evData);
-      // 1) Details
       renderDetails(evData);
-      // 2) Wichtige Infos
       renderInfos(evData);
-      // 3) Kommentare
       renderComments(evData.comments||[]);
     }
 
     // (1) VERANSTALTUNGS-DETAILS
     function renderDetails(evData){
       let detailHTML="";
-      detailHTML += `<strong>Event-Name:</strong> ${evData.name || '???'}<br/>`;
+      detailHTML+= `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
+
       if(evData.datum){
         const dObj= new Date(evData.datum);
-        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-        detailHTML += `<strong>Datum:</strong> ${dStr}<br/>`;
+        // Format: DD.MM.YY
+        let dd= String(dObj.getDate()).padStart(2,'0');
+        let mm= String(dObj.getMonth()+1).padStart(2,'0');
+        let yy= String(dObj.getFullYear()%100).padStart(2,'0');
+        detailHTML += `<strong>Datum:</strong> ${dd}.${mm}.${yy}<br/>`;
       }
       if(evData.startzeit){
         detailHTML += `<strong>Startzeit:</strong> ${evData.startzeit} Uhr<br/>`;
@@ -383,46 +380,44 @@
 
     // (2) WICHTIGE INFOS
     function renderInfos(evData){
-      const infoStr= evData.importantInfo || "Noch keine Infos...";
-      const infoTextEl= document.getElementById('infoText');
-      infoTextEl.innerHTML= infoStr.replace(/\n/g,'<br>'); // Absätze
+      const infoStr= evData.importantInfo||"Noch keine Infos...";
+      document.getElementById('infoText').innerHTML= infoStr.replace(/\n/g,'<br>');
 
       if(canRemove){
         document.getElementById('infoInput').style.display='block';
         document.getElementById('saveInfoBtn').style.display='inline-block';
         document.getElementById('infoInput').value= infoStr;
+      } else {
+        document.getElementById('infoInput').style.display='none';
+        document.getElementById('saveInfoBtn').style.display='none';
       }
     }
     async function saveInfos(){
-      if(!canRemove) return;
-      const newText= document.getElementById('infoInput').value.trim();
-      const ref= doc(db,"events", currentEventId);
+      if(!canRemove)return;
+      const newVal= document.getElementById('infoInput').value.trim();
+      const ref= doc(db,"events",currentEventId);
       try{
-        await updateDoc(ref,{ importantInfo: newText });
+        await updateDoc(ref,{ importantInfo: newVal });
         showNotification("Wichtige Infos gespeichert");
-        document.getElementById('infoText').innerHTML= newText.replace(/\n/g,'<br>') || "Noch keine Infos...";
+        document.getElementById('infoText').innerHTML= newVal.replace(/\n/g,'<br>')||"Noch keine Infos...";
       }catch(err){
-        console.error("Fehler beim Speichern:", err);
-        showNotification("Fehler beim Speichern: "+err.message,'error');
+        showNotification("Fehler: "+err.message,'error');
       }
     }
 
-    // (3) KOMMENTARE (Chat)
+    // (3) Kommentare (Chat)
     function renderComments(commentArr){
-      // sortiere chronologisch
+      // Chronologisch
       const sorted= commentArr.slice().sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
-
       const cList= document.getElementById('commentList');
       cList.innerHTML='';
-      if(sorted.length===0){
+      if(!sorted.length){
         cList.innerHTML= "<p>Noch keine Kommentare</p>";
         return;
       }
       sorted.forEach(cObj=>{
         const bubble= document.createElement('div');
         bubble.classList.add('chat-bubble');
-
-        // "me" / "other"
         if(cObj.user===loggedInUser) bubble.classList.add('me');
         else bubble.classList.add('other');
 
@@ -435,51 +430,56 @@
           bubble.appendChild(xBtn);
         }
 
-        // Header (Name + Datum + Like)
+        // Header (Name + Datum + Zeit + Herz)
         const header= document.createElement('div');
         header.className='chat-header';
 
         const userSpan= document.createElement('span');
         userSpan.textContent= cObj.user;
 
+        // Datum in DD.MM.YY HH:MM 
+        const dtObj= new Date(cObj.timestamp);
+        let dd= String(dtObj.getDate()).padStart(2,'0');
+        let mm= String(dtObj.getMonth()+1).padStart(2,'0');
+        let yy= String(dtObj.getFullYear()%100).padStart(2,'0');
+        let hh= String(dtObj.getHours()).padStart(2,'0');
+        let min= String(dtObj.getMinutes()).padStart(2,'0');
+        const dtStr= `${dd}.${mm}.${yy} ${hh}:${min}`;
+        
         const metaSpan= document.createElement('span');
         metaSpan.className='chat-meta';
-        const dt= new Date(cObj.timestamp).toLocaleString('de-DE');
-        metaSpan.textContent= `(${dt})`;
+        metaSpan.textContent= `(${dtStr})`;
 
         const likeBtn= document.createElement('button');
         likeBtn.className='like-btn';
-        const likes= cObj.likes||[];
-        const isLiked= likes.includes(loggedInUser);
+        const oldLikes= cObj.likes||[];
+        const isLiked= oldLikes.includes(loggedInUser);
         likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
         likeBtn.onclick= ()=> toggleLike(cObj);
 
         header.appendChild(userSpan);
         header.appendChild(metaSpan);
         header.appendChild(likeBtn);
-
         bubble.appendChild(header);
 
-        // Kommentar-Text (Zeilenumbrüche)
+        // Text
         const txtDiv= document.createElement('div');
-        const raw= cObj.text || "";
-        txtDiv.innerHTML= raw.replace(/\n/g,'<br>');
+        txtDiv.innerHTML= (cObj.text||"").replace(/\n/g,'<br>');
         bubble.appendChild(txtDiv);
 
-        // "Dein Kommentar wurde X mal geherzt."
+        // "Dein Kommentar wurde x mal geherzt."
         const heartLine= document.createElement('div');
         heartLine.className='heart-line';
-        heartLine.textContent= `Dein Kommentar wurde ${likes.length} mal geherzt.`;
+        heartLine.textContent= `Dein Kommentar wurde ${oldLikes.length} mal geherzt.`;
         bubble.appendChild(heartLine);
 
         cList.appendChild(bubble);
       });
     }
 
-    // Kommentar absenden
     async function sendComment(){
       if(!loggedInUser){
-        showNotification("Bitte zuerst einloggen",'error');
+        showNotification("Bitte einloggen",'error');
         return;
       }
       const input= document.getElementById('commentInput');
@@ -500,13 +500,12 @@
         await updateDoc(ref,{ comments: arrayUnion(newCmt) });
         showNotification("Kommentar hinzugefügt");
         input.value='';
-        loadEvent(); // Neu laden => Chat-Liste aktualisieren
+        loadEvent();
       }catch(err){
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
 
-    // Kommentar löschen (Admin)
     async function removeComment(cObj){
       if(!canRemove)return;
       if(!confirm("Nachricht wirklich löschen?")) return;
@@ -515,15 +514,14 @@
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         showNotification("Nachricht gelöscht");
         loadEvent();
-      } catch(err){
+      }catch(err){
         showNotification("Fehler beim Löschen: "+err.message,'error');
       }
     }
 
-    // Like toggeln
     async function toggleLike(cObj){
       if(!loggedInUser){
-        showNotification("Bitte einloggen zum Liken",'error');
+        showNotification("Bitte einloggen",'error');
         return;
       }
       const oldLikes= Array.isArray(cObj.likes)? [...cObj.likes]:[];
@@ -534,20 +532,16 @@
         oldLikes.push(loggedInUser);
       }
       const updated= {...cObj, likes: oldLikes};
-
       const ref= doc(db,"events", currentEventId);
       try{
-        // Alte Version entfernen
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
-        // Neue Version hinzufügen
         await updateDoc(ref,{ comments: arrayUnion(updated) });
         loadEvent();
-      } catch(err){
+      }catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
     }
 
-    // Logout
     async function logout(){
       try{
         await signOut(auth);
@@ -557,17 +551,15 @@
       }
     }
 
-    // Auth
-    onAuthStateChanged(auth, (user)=>{
+    onAuthStateChanged(auth, user=>{
       if(user){
         loggedInUser= user.displayName||user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
         loadEvent();
-        // Evtl. Willkommen-Text
       } else {
         loggedInUser=null;
         canRemove=false;
-        document.body.innerHTML="<p>Bitte einloggen.</p>";
+        document.body.innerHTML="<p>Bitte logge dich ein.</p>";
       }
     });
 
@@ -579,8 +571,7 @@
         document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
-
-      // Klick-Handler
+      // Buttons
       document.getElementById('saveInfoBtn').addEventListener('click', saveInfos);
       document.getElementById('sendCommentBtn').addEventListener('click', sendComment);
       document.getElementById('logoutButton').addEventListener('click', logout);
