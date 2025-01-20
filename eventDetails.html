@@ -5,7 +5,7 @@
   <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 
-  <title>Goethebunker Schichtplanung - Übersicht</title>
+  <title>Goethebunker Schichtplanung – Event Details</title>
 
   <style>
     :root {
@@ -211,37 +211,50 @@
   <div class="container">
     <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
 
-    <!-- NEUER CONTAINER: Wichtige Infos (wie die anderen Container .event) -->
+    <!-- WICHTIGE INFOS (Admin kann bearbeiten) -->
     <div class="event" id="infoContainer">
       <h3>Wichtige Infos</h3>
-      <p id="infoText">Hier stehen wichtige Informationen zum Event...</p>
-      <!-- Nur Admin sieht dieses Textarea + Button -->
-      <textarea id="infoInput" rows="3" placeholder="Infos eintragen..." style="display:none;"></textarea>
-      <button id="saveInfoBtn" style="display:none;">Speichern</button>
+      <!-- Alle sehen -->
+      <p id="infoText">Noch keine Infos ...</p>
+      <!-- Nur Admin sieht: -->
+      <textarea id="infoInput" rows="3" placeholder="Infos eintragen..." style="display: none;"></textarea>
+      <button id="saveInfoBtn" style="display: none;">Speichern</button>
     </div>
 
-    <!-- Bisheriger Event-Container (Kommentare / etc.) -->
-    <div id="eventContainer"></div>
+    <!-- VERANSTALTUNGS-DETAILS -->
+    <div class="event" id="detailContainer">
+      <h3>Veranstaltungs-Details</h3>
+      <p id="detailText">Name, Datum, Mitarbeiter ...</p>
+      <!-- Evtl. weitere Felder oder Buttons hier -->
+    </div>
+
+    <!-- KOMMENTAR-BEREICH -->
+    <div class="event" id="commentContainer">
+      <h3>Kommentare</h3>
+      <!-- Hier kommt Chat/Kommentare -->
+      <div id="commentList" style="margin-bottom:16px;"></div>
+      <!-- Nur eingeloggte User können kommentieren? -->
+      <textarea id="commentInput" rows="2" placeholder="Kommentar..."></textarea>
+      <button id="commentSendBtn">Senden</button>
+    </div>
+
   </div>
 
   <footer>
     <button id="logoutButton">Logout</button>
   </footer>
 
-  <!-- Firebase-Skripte -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, doc, getDoc, updateDoc
+      getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    /* ===================
-       Firebase-Konfig 
-       =================== */
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
       authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -260,6 +273,7 @@
     let canRemove = false;  // Admin?
     let currentEventId = null;
 
+    // Hilfsfunktion: Benachrichtigung
     function showNotification(msg,type='success') {
       const notiBox = document.getElementById('notification');
       const div = document.createElement('div');
@@ -274,7 +288,7 @@
       },3000);
     }
 
-    // Datum
+    // Datum anzeigen
     function setCurrentDate() {
       const el = document.getElementById('currentDate');
       const d = new Date();
@@ -282,38 +296,62 @@
       el.textContent = d.toLocaleDateString('de-DE', opts);
     }
 
-    // Lädt das Event-Dokument und zeigt es an
+    // Event-Daten laden
     async function loadEvent() {
-      if(!currentEventId) {
-        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+      if(!currentEventId){
+        document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
-      // Firestore-Dokument "events/currentEventId"
-      const ref= doc(db, "events", currentEventId);
-      const snapshot= await getDoc(ref);
-      if(!snapshot.exists()){
-        document.body.innerHTML= "<p>Event nicht gefunden</p>";
+      const ref= doc(db,"events", currentEventId);
+      const snap= await getDoc(ref);
+      if(!snap.exists()){
+        document.body.innerHTML="<p>Event nicht gefunden</p>";
         return;
       }
-      const evData= snapshot.data();
-      console.log("Event-Daten:", evData);
+      const evData= snap.data();
 
-      // Wichtige Infos anzeigen
-      const infoText= evData.importantInfo || "Noch keine Infos eingetragen";
-      document.getElementById('infoText').textContent= infoText;
-
-      // Wenn admin => Textarea + Button
+      // (1) Wichtige Infos
+      const info= evData.importantInfo || "Noch keine Infos eingetragen";
+      document.getElementById('infoText').textContent= info;
       if(canRemove){
         document.getElementById('infoInput').style.display='block';
         document.getElementById('saveInfoBtn').style.display='inline-block';
-        document.getElementById('infoInput').value= infoText;
+        document.getElementById('infoInput').value= info;
       }
 
-      // Hier könntest du auch Kommentare oder sonstige Daten einbauen,
-      // z.B. "renderEventContainer(evData.comments)" etc.
+      // (2) Veranstaltungs-Details (Name, Datum, Mitarbeiter?)
+      let detailHTML= `<strong>Event-Name:</strong> ${evData.name || 'Kein Name'}<br/>`;
+
+      // Datum/Startzeit
+      if(evData.datum){
+        const dateObj= new Date(evData.datum);
+        const dateStr= dateObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+        detailHTML += `<strong>Datum:</strong> ${dateStr}<br/>`;
+      }
+      if(evData.startzeit){
+        detailHTML += `<strong>Startzeit:</strong> ${evData.startzeit} Uhr<br/>`;
+      }
+
+      // Mitarbeiter
+      if(evData.mitarbeiter && evData.mitarbeiter.length>0){
+        detailHTML += `<strong>Mitabeiter:</strong> ${evData.mitarbeiter.join(', ')}<br/>`;
+      } else {
+        detailHTML += `<strong>Mitabeiter:</strong> (noch niemand eingetragen)<br/>`;
+      }
+
+      document.getElementById('detailText').innerHTML= detailHTML;
+
+      // (3) Kommentare
+      // Falls "comments" existiert, wirft sie in renderComments
+      // Hier als Demo:
+      if(Array.isArray(evData.comments)){
+        renderComments(evData.comments);
+      } else {
+        document.getElementById('commentList').innerHTML= "<p>Noch keine Kommentare</p>";
+      }
     }
 
-    // Speichern der "Wichtigen Infos"
+    // Admin: Infos speichern
     async function saveImportantInfo(){
       if(!canRemove) return;
       const newText= document.getElementById('infoInput').value.trim();
@@ -323,40 +361,86 @@
         showNotification("Infos gespeichert.");
         document.getElementById('infoText').textContent= newText || "Noch keine Infos eingetragen";
       } catch(err){
-        console.error("Fehler beim Speichern der Infos:", err);
-        showNotification("Fehler: "+err.message,'error');
+        showNotification("Fehler beim Speichern: "+err.message,'error');
+        console.error(err);
       }
     }
 
-    // Auth-Listener
+    // Kommentare rendern
+    function renderComments(commentArr){
+      const cList= document.getElementById('commentList');
+      cList.innerHTML='';
+      if(commentArr.length===0){
+        cList.innerHTML= "<p>Noch keine Kommentare</p>";
+        return;
+      }
+      commentArr.forEach(cObj=>{
+        const div= document.createElement('div');
+        div.style.marginBottom='10px';
+        div.innerHTML= `<strong>${cObj.user}</strong> (${cObj.timestamp})<br/>${cObj.text}`;
+        cList.appendChild(div);
+      });
+    }
+
+    // Kommentar absenden
+    async function sendComment(){
+      if(!loggedInUser){
+        showNotification("Bitte einloggen, um zu kommentieren",'error');
+        return;
+      }
+      const t= document.getElementById('commentInput').value.trim();
+      if(!t){
+        showNotification("Kommentar ist leer",'error');
+        return;
+      }
+      const newComment= {
+        id: String(Date.now()),
+        user: loggedInUser,
+        text: t,
+        timestamp: new Date().toISOString(),
+        likes: []
+      };
+      try{
+        const ref= doc(db,"events", currentEventId);
+        // Alte Version laden => arrayUnion
+        await updateDoc(ref, {
+          comments: arrayUnion(newComment)
+        });
+        showNotification("Kommentar hinzugefügt");
+        document.getElementById('commentInput').value='';
+        loadEvent(); // neu laden, um Comments anzuzeigen
+      } catch(err){
+        showNotification("Fehler beim Kommentar: "+err.message,'error');
+      }
+    }
+
+    // Auth
     onAuthStateChanged(auth, user=>{
       if(user){
         loggedInUser= user.displayName || user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
-        console.log("Eingeloggt:", loggedInUser, "admin=", canRemove);
-
         loadEvent();
       } else {
-        loggedInUser= null;
-        canRemove= false;
-        console.log("Nicht eingeloggt");
-        // Optional: redirect "bitte einloggen"
+        loggedInUser=null;
+        canRemove=false;
+        document.body.innerHTML="<p>Bitte logge dich ein.</p>";
       }
     });
 
     document.addEventListener('DOMContentLoaded', ()=>{
       setCurrentDate();
-
       // hole ?id=...
       const params= new URLSearchParams(window.location.search);
       currentEventId= params.get('id');
+
       if(!currentEventId){
-        document.body.innerHTML= "<p>Keine Event-ID angegeben.</p>";
+        document.body.innerHTML="<p>Keine Event-ID angegeben</p>";
         return;
       }
 
-      // Klick-Handler
+      // Button-Handler
       document.getElementById('saveInfoBtn').addEventListener('click', saveImportantInfo);
+      document.getElementById('commentSendBtn').addEventListener('click', sendComment);
     });
   </script>
 </body>
