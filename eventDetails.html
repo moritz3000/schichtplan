@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no">
+  <title>Event-Details - Goethebunker</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0; 
+      background: #f5f5f5; 
+      padding: 20px;
+      color: #333;
+    }
+    h1 { 
+      font-size: 1.4em; 
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+
+    .eventDetails {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .small-button, button {
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-block;
+      font-size: 1em;
+      margin-bottom: 10px;
+      /* Keine Hover-Effekte */
+    }
+
+    /* Kommentarbereich */
+    .commentSection {
+      background: #fafafa;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .comment-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .comment-item {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      position: relative;
+    }
+    .comment-user {
+      font-weight: bold;
+    }
+    .comment-meta {
+      font-size: 0.8em;
+      color: #888;
+      margin-left: 6px;
+    }
+    .comment-remove-x {
+      position: absolute; 
+      top: 6px; 
+      right: 8px;
+      background: none; 
+      border: none; 
+      font-size: 1em; 
+      color: #999; 
+      cursor: pointer;
+    }
+    .comment-remove-x:hover {
+      color: #333;
+    }
+    .admin-reply {
+      margin-top: 4px;
+      color: #17a2b8;
+      font-weight: bold;
+    }
+
+    /* Likebox klein, kein Hover */
+    .like-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .likebox {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 4px;
+      background-color: #eee;
+      padding: 2px 6px;
+    }
+    .like-btn {
+      border: none; 
+      background: none; 
+      cursor: pointer;
+      font-size: 1.1em;
+      color: #000;
+    }
+    .like-outlined::before {
+      content: "♡";
+    }
+    .like-filled::before {
+      content: "♥";
+      color: #e53939;
+    }
+    .like-count {
+      font-size: 0.85em;
+    }
+
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+    .comment-actions button {
+      font-size: 0.8em;
+    }
+
+    /* input, textarea */
+    input, textarea {
+      width: 100%; 
+      padding: 10px; 
+      margin-bottom:10px; 
+      border: 1px solid #ccc; 
+      border-radius: 6px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Event-Details</h1>
+  <div id="eventContainer" class="eventDetails">
+    <!-- Daten zum Event werden hier eingefügt -->
+  </div>
+
+  <!-- Kommentare etc. -->
+  <div id="commentSection" class="commentSection" style="display:none;">
+    <h3>Kommentare</h3>
+    <textarea id="commentInput" rows="3" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
+    <button class="small-button" id="addCommentButton">Kommentar absenden</button>
+    <div class="comment-list" id="commentList"></div>
+  </div>
+
+  <!-- Firebase / JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+    import {
+      getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+    // Deine Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+  authDomain: "schichtplan-5c70f.firebaseapp.com",
+  projectId: "schichtplan-5c70f",
+  storageBucket: "schichtplan-5c70f.firebasestorage.app",
+  messagingSenderId: "502149312331",
+  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+  measurementId: "G-0DL0R5B7LV"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let loggedInUser = null;
+    let loggedInEmail = null;
+    let canRemove = false;
+
+    // URL param ?id=...
+    let currentEventId = null;
+
+    // Bei DOM Start
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // parse URL
+      const params = new URLSearchParams(window.location.search);
+      currentEventId = params.get('id');
+      if(!currentEventId) {
+        document.body.innerHTML = `<p>Keine Event-ID angegeben.</p>`;
+        return;
+      }
+
+      // Hol den Event
+      await loadEvent();
+
+      // Buttons
+      document.getElementById('addCommentButton').addEventListener('click', addComment);
+    });
+
+    // Event laden
+    async function loadEvent() {
+      const eventDocRef = doc(db, "events", currentEventId);
+      const snapshot = await getDoc(eventDocRef);
+      if(!snapshot.exists()) {
+        document.body.innerHTML = `<p>Event nicht gefunden.</p>`;
+        return;
+      }
+      const eventData = snapshot.data();
+      renderEventDetails(eventData);
+      // Kommentarbereich zeigen
+      document.getElementById('commentSection').style.display = 'block';
+    }
+
+    function renderEventDetails(ev) {
+      const cont = document.getElementById('eventContainer');
+      cont.innerHTML = '';
+      const dateStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+      cont.innerHTML = `
+        <h2>${ev.name}</h2>
+        <p><strong>${dateStr}</strong> • Start: ${ev.startzeit || ''} Uhr</p>
+        <p>Verfügbare Mitarbeiter:</p>
+      `;
+      // Liste
+      const staffDiv = document.createElement('div');
+      (ev.mitarbeiter||[]).forEach(name => {
+        const span = document.createElement('span');
+        span.style.display='inline-block';
+        span.style.marginRight='6px';
+        span.textContent = name;
+        if(canRemove) {
+          // Admin kann entfernen
+          const xBtn = document.createElement('button');
+          xBtn.textContent='x';
+          xBtn.style.marginLeft='4px';
+          xBtn.onclick = ()=> removeStaff(name);
+          span.appendChild(xBtn);
+        }
+        staffDiv.appendChild(span);
+      });
+      cont.appendChild(staffDiv);
+
+      // Kommentare
+      renderComments(ev.comments || []);
+    }
+
+    // Kommentare rendern
+    function renderComments(commentsArr) {
+      const listEl = document.getElementById('commentList');
+      listEl.innerHTML = '';
+
+      commentsArr.forEach(commentObj => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+
+        if(canRemove) {
+          const removeX = document.createElement('button');
+          removeX.className='comment-remove-x';
+          removeX.textContent='x';
+          removeX.onclick = ()=> removeComment(commentObj);
+          item.appendChild(removeX);
+        }
+
+        // Name + Zeit
+        const userEl = document.createElement('span');
+        userEl.className='comment-user';
+        userEl.textContent= commentObj.user;
+
+        const metaEl = document.createElement('span');
+        metaEl.className='comment-meta';
+        metaEl.textContent = ` (${new Date(commentObj.timestamp).toLocaleString('de-DE')})`;
+        userEl.appendChild(metaEl);
+
+        const textEl = document.createElement('div');
+        textEl.className='comment-text';
+        textEl.textContent = commentObj.text;
+
+        item.appendChild(userEl);
+        item.appendChild(textEl);
+
+        if(commentObj.adminReply && commentObj.adminReply.trim().length>0) {
+          const replyEl = document.createElement('div');
+          replyEl.className='admin-reply';
+          replyEl.textContent='Antwort vom Admin: '+commentObj.adminReply;
+          item.appendChild(replyEl);
+        }
+
+        // Like Container
+        const likeContainer = document.createElement('div');
+        likeContainer.className='like-container';
+
+        const likeBox = document.createElement('div');
+        likeBox.className='likebox';
+
+        const likeBtn = document.createElement('button');
+        likeBtn.className='like-btn';
+        const isLiked = (commentObj.likes||[]).includes(loggedInEmail||loggedInUser);
+        if(isLiked) {
+          likeBtn.classList.add('like-filled');
+        } else {
+          likeBtn.classList.add('like-outlined');
+        }
+        likeBtn.onclick = () => toggleLike(commentObj);
+
+        const likeCount = document.createElement('span');
+        likeCount.className='like-count';
+        likeCount.textContent = String((commentObj.likes||[]).length);
+
+        likeBox.appendChild(likeBtn);
+        likeBox.appendChild(likeCount);
+        likeContainer.appendChild(likeBox);
+        item.appendChild(likeContainer);
+
+        // Admin kann antworten
+        if(canRemove) {
+          const actions = document.createElement('div');
+          actions.className='comment-actions';
+
+          const replyBtn = document.createElement('button');
+          replyBtn.textContent='Antwort';
+          replyBtn.onclick= ()=> respondToComment(commentObj);
+
+          actions.appendChild(replyBtn);
+          item.appendChild(actions);
+        }
+
+        listEl.appendChild(item);
+      });
+    }
+
+    // Kommentar hinzufügen
+    async function addComment() {
+      if(!loggedInUser) {
+        alert('Bitte einloggen');
+        return;
+      }
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      if(!text) {
+        alert('Kommentar ist leer'); 
+        return;
+      }
+      if(text.length>160) {
+        alert('Max 160 Zeichen');
+        return;
+      }
+      const newComm = {
+        id: String(Date.now()),
+        user: loggedInUser,
+        text,
+        adminReply:'',
+        timestamp: new Date().toISOString(),
+        likes:[]
+      };
+      try {
+        const ref = doc(db,"events",currentEventId);
+        await updateDoc(ref, {
+          comments: arrayUnion(newComm)
+        });
+        alert('Kommentar hinzugefügt');
+        input.value='';
+        // Neu laden
+        loadEvent();
+      } catch(err) {
+        console.error('Fehler addComment', err);
+        alert('Fehler beim Kommentar: '+err.message);
+      }
+    }
+
+    // Kommentar löschen (Admin)
+    async function removeComment(commentObj) {
+      if(!canRemove) return;
+      if(!confirm('Kommentar wirklich löschen?')) return;
+      try {
+        const ref = doc(db,"events", currentEventId);
+        await updateDoc(ref, {
+          comments: arrayRemove(commentObj)
+        });
+        loadEvent();
+      } catch(err) {
+        alert('Fehler beim Löschen: '+err.message);
+      }
+    }
+
+    // Admin antwortet
+    async function respondToComment(commentObj) {
+      if(!canRemove) return;
+      const reply = prompt('Admin-Antwort:', commentObj.adminReply||'');
+      if(reply===null) return;
+      const updated = {...commentObj, adminReply:reply};
+      try {
+        const ref = doc(db,"events", currentEventId);
+        await updateDoc(ref, { comments: arrayRemove(commentObj) });
+        await updateDoc(ref, { comments: arrayUnion(updated) });
+        loadEvent();
+      } catch(err) {
+        alert('Fehler bei Antwort: '+err.message);
+      }
+    }
+
+    // Like toggeln
+    async function toggleLike(commentObj) {
+      if(!loggedInUser) {
+        alert('Bitte einloggen zum Liken');
+        return;
+      }
+      const userId = loggedInEmail || loggedInUser;
+      const newLikes = Array.isArray(commentObj.likes)? [...commentObj.likes]:[];
+      if(newLikes.includes(userId)) {
+        // schon geliked -> entfernen
+        newLikes.splice(newLikes.indexOf(userId),1);
+      } else {
+        newLikes.push(userId);
+      }
+      const updated = {...commentObj, likes:newLikes};
+      try {
+        const ref = doc(db,"events", currentEventId);
+        await updateDoc(ref, { comments: arrayRemove(commentObj) });
+        await updateDoc(ref, { comments: arrayUnion(updated) });
+        loadEvent();
+      } catch(err) {
+        alert('Fehler beim Liken: '+err.message);
+      }
+    }
+
+    // Staff entfernen (Admin)
+    async function removeStaff(name) {
+      if(!canRemove) return;
+      if(!confirm('Mitarbeiter entfernen?')) return;
+      try {
+        const ref = doc(db,"events", currentEventId);
+        await updateDoc(ref, {
+          mitarbeiter: arrayRemove(name)
+        });
+        loadEvent();
+      } catch(err) {
+        alert('Fehler beim Entfernen: '+err.message);
+      }
+    }
+
+    // Auth-Überwachung
+    onAuthStateChanged(auth, user => {
+      if(user) {
+        loggedInUser = user.displayName || user.email;
+        loggedInEmail = user.email;
+        canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
+      } else {
+        loggedInUser=null;
+        loggedInEmail=null;
+        canRemove=false;
+      }
+      // Nach dem Login/Logout kann man neu laden, um Admin-Funktionen einzublenden
+      loadEvent();
+    });
+  </script>
+</body>
+</html>
