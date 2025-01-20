@@ -2,8 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Login – Goethebunker</title>
+  <!-- No Zoom -->
+  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+  <title>Registrieren – Goethebunker</title>
 
   <style>
     body {
@@ -37,16 +38,6 @@
       width: 100%;
       font-size: 1em;
     }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    a {
-      color: #007bff;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
-    }
     #notification {
       position: fixed;
       top: 10px;
@@ -70,24 +61,23 @@
   <div id="notification"></div>
 
   <div class="container">
-    <h1>Login</h1>
-    <input type="email" id="emailLogin" placeholder="E-Mail eingeben">
-    <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
-    <button id="loginBtn">Login</button>
+    <h1>Registrieren</h1>
+    <input type="text" id="usernameRegister" placeholder="Benutzername">
+    <input type="email" id="emailRegister" placeholder="E-Mail">
+    <input type="password" id="passwordRegister" placeholder="Passwort">
+    <button id="registerBtn">Registrieren</button>
 
-    <p>Noch kein Konto? <a href="register.html">Registrieren</a></p>
+    <p>Schon ein Konto? <a href="index.html">Zurück zum Login</a></p>
   </div>
 
-  <!-- Firebase + JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-    import { 
-      getAuth, signInWithEmailAndPassword, onAuthStateChanged,
-      setPersistence, browserLocalPersistence, browserSessionPersistence
+    import {
+      getAuth, createUserWithEmailAndPassword, updateProfile
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
     import {
-      getFirestore
+      getFirestore, doc, setDoc
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
     // Deine Firebase-Config
@@ -106,7 +96,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    function showNotification(msg, type='success'){
+    function showNotification(msg,type='success'){
       const n = document.getElementById('notification');
       const d = document.createElement('div');
       d.className='notification-message';
@@ -119,33 +109,32 @@
       },3000);
     }
 
-    document.getElementById('loginBtn').addEventListener('click', async ()=>{
-      const email= document.getElementById('emailLogin').value.trim();
-      const pw= document.getElementById('passwordLogin').value;
-      if(!email||!pw) {
-        showNotification('Bitte E-Mail und Passwort eingeben','error');
+    document.getElementById('registerBtn').addEventListener('click', async ()=>{
+      const username= document.getElementById('usernameRegister').value.trim();
+      const email= document.getElementById('emailRegister').value.trim();
+      const pw= document.getElementById('passwordRegister').value;
+      if(!username||!email||!pw){
+        showNotification('Bitte alle Felder ausfüllen','error');
         return;
       }
       try {
-        // Optional: Persistenz
-        // await setPersistence(auth, browserLocalPersistence);
+        const cred= await createUserWithEmailAndPassword(auth, email, pw);
+        // Displayname setzen
+        await updateProfile(cred.user, { displayName: username });
 
-        const userCred= await signInWithEmailAndPassword(auth, email, pw);
-        showNotification(`Login erfolgreich: ${userCred.user.email}`);
-        // Weiter zur eventDetails-Seite?
-        window.location.href='eventDetails.html?id=DeinEventID'; 
-        // oder du führst auf eine Übersichtsseite ...
+        // In "users" Collection ablegen mit "approved:false"
+        await setDoc(doc(db, "users", cred.user.uid), {
+          email,
+          username,
+          approved: false
+        });
+
+        showNotification('Registrierung erfolgreich. Bitte warte auf Freischaltung.','success');
+        // Evtl. redirect zu index.html
+        // window.location.href='index.html';
       } catch(err){
-        showNotification('Login-Fehler: '+err.message, 'error');
-      }
-    });
-
-    // Falls du onAuthStateChanged nutzen willst, um redirect etc.
-    onAuthStateChanged(auth, user=>{
-      if(user){
-        console.log("Eingeloggt:", user.email);
-      } else {
-        console.log("Noch nicht eingeloggt");
+        console.error('Reg Fehler', err);
+        showNotification('Registrieren fehlgeschlagen: '+err.message,'error');
       }
     });
   </script>
