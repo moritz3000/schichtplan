@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,maximum-scale=1.0,user-scalable=no">
+  <title>Login – Goethebunker</title>
+  <style>
+    /* Simpler Login-Stil */
+    body { font-family: sans-serif; margin:0; padding:20px; background:#f5f5f5;}
+    .container { max-width:400px; margin:0 auto; background:#fff; border:1px solid #ccc; border-radius:8px; padding:16px;}
+    input { width:100%; padding:10px; margin-bottom:12px; border-radius:6px; border:1px solid #ccc;}
+    button { width:100%; padding:10px; background:#007bff; color:#fff; border:none; border-radius:6px; font-size:1em; cursor:pointer;}
+    #notification {position:fixed; top:10px; right:10px; max-width:90%;}
+    .notification-message {background:#28a745; color:#fff; padding:10px 20px; margin-bottom:10px; border-radius:6px;}
+    .notification-error { background:#dc3545;}
+  </style>
+</head>
+<body>
+  <div id="notification"></div>
+  <div class="container">
+    <h1>Login</h1>
+    <input type="email" id="emailInput" placeholder="E-Mail">
+    <input type="password" id="passwordInput" placeholder="Passwort">
+    <button id="loginBtn">Einloggen</button>
+
+    <p>Noch kein Konto? <a href="register.html">Registrieren</a></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+    import { 
+      getAuth, signInWithEmailAndPassword, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+    import {
+      getFirestore
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+    // Firebase-Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+      authDomain: "schichtplan-5c70f.firebaseapp.com",
+      projectId: "schichtplan-5c70f",
+      storageBucket: "schichtplan-5c70f.firebasestorage.app",
+      messagingSenderId: "502149312331",
+      appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+      measurementId: "G-0DL0R5B7LV"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    function showNotification(msg,type='success'){
+      const box= document.getElementById('notification');
+      const div= document.createElement('div');
+      div.className='notification-message';
+      if(type==='error') div.classList.add('notification-error');
+      div.textContent= msg;
+      box.appendChild(div);
+      setTimeout(()=>{
+        div.style.opacity='0';
+        setTimeout(()=>div.remove(),500);
+      },3000);
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async ()=>{
+      const email= document.getElementById('emailInput').value.trim();
+      const pw= document.getElementById('passwordInput').value;
+      if(!email||!pw){
+        showNotification('Bitte E-Mail und Passwort eingeben','error');
+        return;
+      }
+      try {
+        const cred= await signInWithEmailAndPassword(auth, email, pw);
+        showNotification('Login erfolgreich');
+        // Weiter zur Übersicht
+        window.location.href = 'overview.html';
+      } catch(err){
+        showNotification('Login fehlgeschlagen: '+err.message, 'error');
+      }
+    });
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        console.log('Bereits eingeloggt:', user.email);
+        // Optional: Direkt zur Übersicht
+        // window.location.href='overview.html';
+      } else {
+        console.log('Nicht eingeloggt');
+      }
+    });
+  </script>
+</body>
+</html>
