@@ -40,14 +40,14 @@
       display: flex;
       align-items: center;
       justify-content: center; /* Text mittig */
-      font-size: 0.95em; /* etwas kleiner */
+      font-size: 0.95em;
       box-shadow: var(--shadow);
       text-align: center;
       position: relative;
     }
     .title {
       font-weight: bold;
-      font-size: 1em; /* kleiner */
+      font-size: 1em; 
     }
 
     #welcomeUser {
@@ -63,7 +63,7 @@
     /* Zurück-Button */
     #backButton {
       background-color: var(--primary-color);
-      color: #fff;
+      color: var(--white);
       border: none;
       border-radius: var(--border-radius);
       padding: var(--button-padding);
@@ -73,6 +73,29 @@
       display: inline-block;
       text-decoration: none;
       margin-top: 20px;
+    }
+
+    /* Generische Styles für Eingabefelder & Buttons im Seiten-Stil */
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
+      font-size: 1em;
+    }
+    textarea {
+      resize: none;
+    }
+    button {
+      padding: var(--button-padding);
+      background-color: var(--primary-color);
+      color: var(--white);
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1em;
+      margin-bottom: 16px;
     }
 
     .event {
@@ -134,11 +157,13 @@
       align-items: center;
       margin-bottom: 2px; /* minimaler Abstand */
     }
-    /* Name + Zeit auf einer Zeile */
+
+    /* Name + Zeit in einer Zeile,
+       Datum/Zeit dezenter und kleiner */
     .chat-meta {
-      font-size: 0.8em;
+      font-size: 0.75em; 
       color: #888;
-      margin-left: 0.3ch; /* minimaler Abstand */
+      margin-left: 0.3ch;
     }
 
     /* Like Button */
@@ -160,7 +185,7 @@
     .heart-line {
       font-size: 0.75em;
       color: #777;
-      margin-top: 8px; /* größerer Abstand */
+      margin-top: 8px;
     }
 
     #notification {
@@ -251,7 +276,7 @@
     <div class="event" id="commentContainer">
       <h3>Kommentare</h3>
 
-      <!-- Kommentare oben -->
+      <!-- Kommentare -->
       <div class="chat-list" id="commentList"></div>
 
       <!-- Eingabe unten -->
@@ -295,9 +320,7 @@
     let currentEventId = null;
     let unsubDoc = null;
 
-    /* ===================
-       Benachrichtigungen
-    =================== */
+    // Notifikation
     function showNotification(msg, type='success'){
       const container= document.getElementById('notification');
       const div= document.createElement('div');
@@ -312,19 +335,13 @@
       },3000);
     }
 
-    /* ===================
-       Navigation
-    =================== */
     document.getElementById('backButton').addEventListener('click', ()=>{
       window.location.href='index.html';
     });
 
-    /* ===================
-       Details rendern
-    =================== */
     function renderDetails(evData){
       let detailHTML="";
-      detailHTML += `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
+      detailHTML+= `<strong>Event-Name:</strong> ${evData.name||'???'}<br/>`;
       if(evData.datum){
         const dObj= new Date(evData.datum);
         const dd= String(dObj.getDate()).padStart(2,'0');
@@ -343,9 +360,6 @@
       document.getElementById('detailText').innerHTML= detailHTML;
     }
 
-    /* ===================
-       Wichtige Infos
-    =================== */
     function renderInfos(evData){
       const infoStr= evData.importantInfo||"Noch keine Infos...";
       document.getElementById('infoText').innerHTML= infoStr.replace(/\n/g,'<br>');
@@ -359,7 +373,7 @@
       }
     }
     async function saveInfos(){
-      if(!canRemove) return;
+      if(!canRemove)return;
       const newVal= document.getElementById('infoInput').value.trim();
       const ref= doc(db,"events", currentEventId);
       try{
@@ -370,11 +384,7 @@
       }
     }
 
-    /* ===================
-       Kommentare/Chat
-    =================== */
     function renderComments(commentArr){
-      // chronologisch (ältester zuerst)
       const sorted= commentArr.slice().sort((a,b)=> new Date(a.timestamp)- new Date(b.timestamp));
       const cList= document.getElementById('commentList');
       cList.innerHTML='';
@@ -388,7 +398,6 @@
         if(cObj.user===loggedInUser) bubble.classList.add('me');
         else bubble.classList.add('other');
 
-        // Admin-löschen
         if(canRemove){
           const xBtn= document.createElement('button');
           xBtn.className='chat-remove-x';
@@ -401,7 +410,7 @@
         const header= document.createElement('div');
         header.className='chat-header';
 
-        // Name + date/time
+        // Name + Zeit
         const dt= new Date(cObj.timestamp);
         const dd= String(dt.getDate()).padStart(2,'0');
         const mm= String(dt.getMonth()+1).padStart(2,'0');
@@ -410,16 +419,17 @@
         const mn= String(dt.getMinutes()).padStart(2,'0');
         const dtStr= `${dd}.${mm}.${yy} ${hh}:${mn}`;
 
-        // z.B. Moritz 03.08.23 12:45
         const nameSpan= document.createElement('span');
-        nameSpan.innerHTML= `<strong>${cObj.user}</strong> ${dtStr}`; // 1 space
+        nameSpan.innerHTML= `<strong>${cObj.user}</strong> <span class="chat-meta">${dtStr}</span>`;
 
-        // Like-Button
-        const likeBtn= document.createElement('button');
-        likeBtn.className='like-btn';
+        // Like Button
         const likes= cObj.likes||[];
         const isLiked= likes.includes(loggedInUser);
-        likeBtn.classList.add(isLiked ? 'like-filled' : 'like-outlined');
+
+        const likeBtn= document.createElement('button');
+        likeBtn.className='like-btn';
+        if(isLiked) likeBtn.classList.add('like-filled');
+        else likeBtn.classList.add('like-outlined');
         likeBtn.onclick= ()=> toggleLike(cObj);
 
         header.appendChild(nameSpan);
@@ -431,7 +441,7 @@
         txtDiv.innerHTML= (cObj.text||"").replace(/\n/g,'<br>');
         bubble.appendChild(txtDiv);
 
-        // "Dein Kommentar wurde x mal geherzt."
+        // Herz-Zeile
         const heartLine= document.createElement('div');
         heartLine.className='heart-line';
         heartLine.textContent= `Dein Kommentar wurde ${likes.length} mal geherzt.`;
@@ -440,6 +450,7 @@
         cList.appendChild(bubble);
       });
     }
+
     async function sendComment(){
       if(!loggedInUser){
         showNotification("Bitte einloggen",'error');
@@ -457,7 +468,7 @@
         timestamp: new Date().toISOString(),
         likes:[]
       };
-      const ref= doc(db,"events",currentEventId);
+      const ref= doc(db,"events", currentEventId);
       try{
         await updateDoc(ref,{ comments: arrayUnion(newCmt) });
         document.getElementById('commentInput').value='';
@@ -466,10 +477,11 @@
         showNotification("Fehler beim Kommentar: "+err.message,'error');
       }
     }
+
     async function removeComment(cObj){
       if(!canRemove)return;
       if(!confirm("Nachricht wirklich löschen?"))return;
-      const ref= doc(db,"events",currentEventId);
+      const ref= doc(db,"events", currentEventId);
       try{
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
         showNotification("Nachricht gelöscht");
@@ -477,45 +489,29 @@
         showNotification("Fehler beim Löschen: "+err.message,'error');
       }
     }
+
     async function toggleLike(cObj){
       if(!loggedInUser){
-        showNotification("Bitte einloggen",'error');
+        showNotification("Bitte einloggen zum Liken",'error');
         return;
       }
       const oldLikes= Array.isArray(cObj.likes)? [...cObj.likes]:[];
       const idx= oldLikes.indexOf(loggedInUser);
-      if(idx>=0) oldLikes.splice(idx,1);
-      else oldLikes.push(loggedInUser);
-
+      if(idx>=0){
+        oldLikes.splice(idx,1);
+      } else {
+        oldLikes.push(loggedInUser);
+      }
       const updated= {...cObj, likes: oldLikes};
       const ref= doc(db,"events", currentEventId);
       try{
-        // Alte Version weg
+        // remove old
         await updateDoc(ref,{ comments: arrayRemove(cObj) });
-        // Neue Version rein
+        // add new
         await updateDoc(ref,{ comments: arrayUnion(updated) });
       }catch(err){
         showNotification("Fehler beim Liken: "+err.message,'error');
       }
-    }
-
-    // Echtzeit per onSnapshot
-    function listenToEventDoc(){
-      const ref= doc(db,"events", currentEventId);
-      if(typeof unsubDoc==='function') unsubDoc(); 
-      unsubDoc= onSnapshot(ref,(snapshot)=>{
-        if(!snapshot.exists()){
-          document.body.innerHTML="<p>Event nicht gefunden</p>";
-          return;
-        }
-        const evData= snapshot.data();
-        renderDetails(evData);
-        renderInfos(evData);
-        renderComments(evData.comments||[]);
-      },(err)=>{
-        console.error("Snapshot Fehler",err);
-        showNotification("Fehler: "+err.message,'error');
-      });
     }
 
     async function logout(){
@@ -527,7 +523,26 @@
       }
     }
 
-    onAuthStateChanged(auth,(user)=>{
+    // Echtzeit mittels onSnapshot
+    function listenToEventDoc(){
+      const ref= doc(db,"events", currentEventId);
+      if(typeof unsubDoc==='function') unsubDoc();
+      unsubDoc= onSnapshot(ref,(snapshot)=>{
+        if(!snapshot.exists()){
+          document.body.innerHTML="<p>Event nicht gefunden</p>";
+          return;
+        }
+        const evData= snapshot.data();
+        renderDetails(evData);
+        renderInfos(evData);
+        renderComments(evData.comments||[]);
+      },(err)=>{
+        console.error("Snapshot Fehler", err);
+        showNotification("Fehler: "+err.message,'error');
+      });
+    }
+
+    onAuthStateChanged(auth, user=>{
       if(user){
         loggedInUser= user.displayName||user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
