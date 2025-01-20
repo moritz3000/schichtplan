@@ -2,7 +2,6 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no">
   <title>Event-Details - Goethebunker</title>
 
@@ -71,19 +70,29 @@
       border-radius: 8px;
       padding: 10px;
     }
+
+    /* Kommentare-Liste mit Abstand nach unten,
+       damit zwischen Kommentaren und Textfeld Platz ist. */
     .comment-list {
-      margin-top: 10px;
+      margin-bottom: 14px; /* etwas Abstand zum Textfeld */
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+
     .comment-item {
       background: #fff;
       border: 1px solid #ddd;
       border-radius: 6px;
       padding: 8px 10px;
       position: relative;
+
+      /* Minimale Breite, max. 192px, Umbruch bei langen Texten */
+      min-width: 160px;
+      max-width: 192px;
+      overflow-wrap: break-word;
     }
+
     .comment-user {
       font-weight: bold;
     }
@@ -92,6 +101,7 @@
       color: #888;
       margin-left: 6px;
     }
+
     .comment-remove-x {
       position: absolute; 
       top: 6px; 
@@ -153,21 +163,15 @@
       font-size: 0.8em;
     }
 
-    /* input, textarea */
-    input, textarea {
-      width: 100%; 
-      padding: 10px; 
-      margin-bottom:10px; 
-      border: 1px solid #ccc; 
-      border-radius: 6px;
-      font-size: 1em;
-    }
-    /* Kommentar-Textfeld nicht skalierbar */
-    textarea {
+    /* Eingabefeld: nur 1 Zeile, 192px breit, nicht skalierbar */
+    #commentInput {
+      width: 192px;
+      max-width: 192px;
+      height: auto;
       resize: none;
+      rows: 1;
     }
 
-    /* Container für Meldungen (optional) */
     #notification {
       position: fixed;
       top: 10px;
@@ -206,15 +210,12 @@
     <!-- Wird dynamisch befüllt -->
   </div>
 
-  <!-- Kommentarbereich (Kommentare oben, Feld unten) -->
+  <!-- Kommentarbereich (Kommentare oben, Textfeld unten) -->
   <div id="commentSection" class="commentSection" style="display:none;">
     <h3>Kommentare</h3>
-
-    <!-- Kommentar-Liste oben -->
     <div class="comment-list" id="commentList"></div>
 
-    <!-- Eingabefeld unten -->
-    <textarea id="commentInput" rows="3" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
+    <textarea id="commentInput" rows="1" placeholder="Kommentar (max. 160 Zeichen)" maxlength="160"></textarea>
     <button class="small-button" id="addCommentButton">Kommentar absenden</button>
   </div>
 
@@ -252,15 +253,14 @@ const firebaseConfig = {
     // URL param ?id=...
     let currentEventId = null;
 
-    // Kurz-Helfer zum neu Laden mit gleicher ID
+    // Kurz-Helfer zum neu Laden
     function reloadPage() {
-      // Lädt dieselbe Seite neu mit identischer ID
+      // Lädt dieselbe Seite neu mit gleicher ID
       window.location.href = window.location.pathname + "?id=" + currentEventId;
     }
 
-    // Bei DOM Start
+    // DOM Start
     document.addEventListener('DOMContentLoaded', async ()=>{
-      // parse URL
       const params = new URLSearchParams(window.location.search);
       currentEventId = params.get('id');
       if(!currentEventId) {
@@ -268,14 +268,14 @@ const firebaseConfig = {
         return;
       }
 
-      // Hol den Event
+      // Event laden
       await loadEvent();
 
-      // Buttons
+      // Button
       document.getElementById('addCommentButton').addEventListener('click', ()=>addCommentAndReload());
     });
 
-    // Notification
+    // Notifikation
     function showNotification(message, type='success') {
       const container = document.getElementById('notification');
       const notif = document.createElement('div');
@@ -300,7 +300,6 @@ const firebaseConfig = {
       }
       const eventData = snapshot.data();
       renderEventDetails(eventData);
-      // Kommentarbereich sichtbar
       document.getElementById('commentSection').style.display = 'block';
     }
 
@@ -308,9 +307,7 @@ const firebaseConfig = {
       const cont = document.getElementById('eventContainer');
       cont.innerHTML = '';
 
-      // Datum
       const dateStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-      // Name, Datum
       const h2 = document.createElement('h2');
       h2.textContent= ev.name;
       cont.appendChild(h2);
@@ -330,8 +327,6 @@ const firebaseConfig = {
         sp.style.display='inline-block';
         sp.style.marginRight='6px';
         sp.textContent = name;
-
-        // Admin -> x
         if(canRemove) {
           const xBtn = document.createElement('button');
           xBtn.textContent='x';
@@ -343,8 +338,12 @@ const firebaseConfig = {
       });
       cont.appendChild(staffDiv);
 
+      // Kommentare sortieren (chronologisch: ältester zuerst)
+      let sortedComments = (ev.comments||[]).slice();
+      sortedComments.sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
+
       // Kommentare rendern
-      renderComments(ev.comments||[]);
+      renderComments(sortedComments);
     }
 
     function renderComments(commentsArr) {
@@ -431,7 +430,9 @@ const firebaseConfig = {
       });
     }
 
-    // ========== Klick-Funktionen (alle reloadPage am Ende) ==========
+    /* ===========================
+       KLICK-Funktionen mit reload 
+       =========================== */
 
     async function addCommentAndReload() {
       if(!loggedInUser) {
@@ -462,8 +463,7 @@ const firebaseConfig = {
           comments: arrayUnion(newComm)
         });
         alert('Kommentar hinzugefügt');
-        // Seite neu laden
-        reloadPage();
+        reloadPage(); // neu laden
       } catch(err) {
         console.error('Fehler addComment', err);
         alert('Fehler beim Kommentar: '+err.message);
@@ -548,9 +548,6 @@ const firebaseConfig = {
         loggedInEmail=null;
         canRemove=false;
       }
-      // Wenn wir was ändern (Admin-Status?), neu laden
-      // => Machen wir hier NICHT nochmal loadEvent(), 
-      //    weil wir es schon beim DOM load machen
     });
   </script>
 </body>
