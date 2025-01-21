@@ -38,11 +38,31 @@
       border:none; 
       border-radius:6px; 
       cursor:pointer;
+      margin-top: 10px;
+    }
+    #notification {
+      position: fixed;
+      top: 10px; 
+      right: 10px; 
+      z-index:9999;
+      max-width: 90%;
+    }
+    .notification-message {
+      background:#28a745; 
+      color:#fff; 
+      padding:10px 20px; 
+      margin-bottom:10px; 
+      border-radius:6px;
+    }
+    .notification-error {
+      background:#dc3545;
     }
   </style>
 </head>
 <body>
   <h1>Mitarbeiter verwalten</h1>
+  <div id="notification"></div>
+
   <table>
     <thead>
       <tr>
@@ -53,114 +73,149 @@
     </thead>
     <tbody id="usersTable"></tbody>
   </table>
+
   <button id="backBtn">Zurück</button>
 
+  <!-- Firebase + JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, collection, onSnapshot, updateDoc, doc
+      getFirestore, collection, onSnapshot, doc, updateDoc
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Firebase-Konfig
-    const firebaseConfig = {
-      // ...
-    };
+    // Deine Firebase-Konfiguration
+const firebaseConfig = {
+  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+  authDomain: "schichtplan-5c70f.firebaseapp.com",
+  projectId: "schichtplan-5c70f",
+  storageBucket: "schichtplan-5c70f.firebasestorage.app",
+  messagingSenderId: "502149312331",
+  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+  measurementId: "G-0DL0R5B7LV"
+};
+
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    let loggedInUser = null;
-    let canRemove = false;
-
     // Rollen-Auswahl
-    const ALL_ROLES = ["Theke", "Garderobe", "Tür", "Kasse", "Schichtleitung"];
+    const ALL_ROLES = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
-    function renderUserRow(userDoc) {
-      const tr = document.createElement('tr');
+    let canRemove = false;
+    let loggedInUser = null;
+
+    // Notifikation
+    function showNotification(msg, type='success'){
+      const container= document.getElementById('notification');
+      const div= document.createElement('div');
+      div.className='notification-message';
+      if(type==='error') div.classList.add('notification-error');
+      div.textContent= msg;
+      container.appendChild(div);
+      setTimeout(()=>{
+        div.style.opacity='0';
+        setTimeout(()=>div.remove(),500);
+      },3000);
+    }
+
+    // Zurück-Button
+    document.getElementById('backBtn').addEventListener('click', ()=>{
+      window.location.href='index.html';
+    });
+
+    // Rendere Tabelle
+    function renderUserRow(userDoc){
+      const tr= document.createElement('tr');
       const data= userDoc.data();
-      // E-Mail
+
+      // (1) E-Mail
       const tdEmail= document.createElement('td');
-      tdEmail.textContent= data.email||"unbekannt";
+      tdEmail.textContent= data.email || "unbekannt";
       tr.appendChild(tdEmail);
 
-      // Name
+      // (2) Name
       const tdName= document.createElement('td');
-      tdName.textContent= data.username|| data.displayName || "kein Name";
+      tdName.textContent= data.username|| data.displayName || "(kein Name)";
       tr.appendChild(tdName);
 
-      // Rollen
+      // (3) Rollen
       const tdRoles= document.createElement('td');
       tdRoles.className='roles';
+      // Aktuelle Rollen
+      const userRoles= Array.isArray(data.roles)? data.roles : [];
 
-      (ALL_ROLES).forEach(role=>{
+      ALL_ROLES.forEach(role=>{
         const label= document.createElement('label');
         const chk= document.createElement('input');
         chk.type='checkbox';
         chk.value= role;
-        chk.checked= Array.isArray(data.roles) && data.roles.includes(role);
+        chk.checked= userRoles.includes(role);
 
-        // Wenn Checkbox geändert -> update Firestore
+        // Änderung -> Firestore update
         chk.addEventListener('change', async()=>{
           const userRef= doc(db,"users", userDoc.id);
-          let newRoles= Array.isArray(data.roles)? [...data.roles] : [];
+          let newRoles= [...userRoles];
           if(chk.checked){
-            // hinzufügen
             if(!newRoles.includes(role)) newRoles.push(role);
           } else {
-            // entfernen
-            newRoles= newRoles.filter(r=> r!== role);
+            newRoles= newRoles.filter(r=> r!==role);
           }
-          await updateDoc(userRef, { roles: newRoles });
+
+          try {
+            await updateDoc(userRef, { roles:newRoles });
+            showNotification(`Rolle "${role}" aktualisiert für ${data.email}`);
+          } catch(err){
+            showNotification("Fehler beim Update: "+ err.message,'error');
+            console.error(err);
+          }
         });
 
         label.appendChild(chk);
         label.append(" "+role);
         tdRoles.appendChild(label);
       });
-
       tr.appendChild(tdRoles);
+
       return tr;
     }
 
-    function renderUsersTable(snapshot){
+    function renderUsersTable(snap){
       const tableBody= document.getElementById('usersTable');
       tableBody.innerHTML='';
-      snapshot.forEach(docData=>{
-        const tr= renderUserRow(docData);
+      snap.forEach(userDoc=>{
+        const tr= renderUserRow(userDoc);
         tableBody.appendChild(tr);
       });
     }
 
-    function loadUsers(){
-      const coll= collection(db,"users");
-      onSnapshot(coll, (snapshot)=>{
+    function loadAllUsers(){
+      const collRef= collection(db,"users");
+      onSnapshot(collRef,(snapshot)=>{
         renderUsersTable(snapshot);
-      }, (err)=>{
-        console.error("Fehler beim Laden der Nutzer:", err);
+      },(err)=>{
+        showNotification("Fehler beim Laden der Nutzer: "+err.message,'error');
+        console.error(err);
       });
     }
 
-    document.getElementById('backBtn').addEventListener('click', ()=>{
-      window.location.href='index.html';
-    });
-
-    onAuthStateChanged(auth,(user)=>{
+    // Auth
+    onAuthStateChanged(auth, (user)=>{
       if(user){
         loggedInUser= user.email;
-        canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de'); 
+        canRemove= (loggedInUser.toLowerCase()==='moritz@goethebunker.de');
         if(!canRemove){
-          document.body.innerHTML="<p>Nur Admin kann diese Seite ansehen</p>";
+          document.body.innerHTML="<p>Nur Admin kann diese Seite ansehen.</p>";
           return;
         }
-        // Admin -> laden
-        loadUsers();
+        // Admin -> lade user
+        loadAllUsers();
       } else {
-        document.body.innerHTML="<p>Bitte einloggen</p>";
+        document.body.innerHTML="<p>Bitte einloggen.</p>";
       }
     });
   </script>
