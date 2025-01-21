@@ -291,7 +291,7 @@
           <tr>
             <th>Datum</th>
             <th>Event</th>
-            <!-- Dynamische Positions-Spalten -->
+            <!-- Beispiel: Spalten für Positionen -->
             <th>Theke</th>
             <th>Garderobe</th>
             <th>Tür</th>
@@ -302,8 +302,7 @@
         <tbody id="availabilityTable"></tbody>
       </table>
       <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
-
-      <!-- Admin-Button, um auf adminUsers.html zu gehen -->
+      <!-- Admin-Button, um adminUsers.html zu öffnen -->
       <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
     </div>
   </div>
@@ -326,10 +325,7 @@
       browserLocalPersistence, browserSessionPersistence
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    /* ===================
-       Firebase-Konfig 
-       =================== */
-const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
   projectId: "schichtplan-5c70f",
@@ -348,10 +344,8 @@ const firebaseConfig = {
     let canRemove = false;
     let allEventsData = [];
 
-    // Damit wir die Rollen der User kennen, um sie in CSV zuzuordnen
-    let userRolesMap = {}; // email -> array of roles
-
-    // Positions
+    // userRolesMap: email -> array of roles, für CSV
+    let userRolesMap = {};
     const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
     function setCurrentDate() {
@@ -377,7 +371,7 @@ const firebaseConfig = {
 
     /* ===================
        Events rendern
-       =================== */
+    =================== */
     function renderEvents(data) {
       const container = document.getElementById('eventContainer');
       container.innerHTML = '';
@@ -439,47 +433,43 @@ const firebaseConfig = {
 
     /* ===================
        Admin-Tabelle
-       =================== */
+    =================== */
     function renderAdminTable(data){
       const tbody = document.getElementById('availabilityTable');
       tbody.innerHTML='';
 
       data.forEach(ev=>{
-        // Format Datum
-        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
         const tr = document.createElement('tr');
-
-        // (1) Datum
+        // Datum
+        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+        
         const tdDate = document.createElement('td');
-        tdDate.textContent=dStr;
+        tdDate.textContent= dStr;
         tr.appendChild(tdDate);
 
-        // (2) Event
         const tdName = document.createElement('td');
         tdName.textContent= ev.name;
         tr.appendChild(tdName);
 
-        // Dann pro Position eine Spalte
+        // Für jede Position -> TD
         POSITIONS.forEach(pos=>{
-          const tdPos = document.createElement('td');
-          // Filtere alle, die in ev.mitarbeiter enthalten sind und in userRolesMap die Rolle pos haben
-          const matched = (ev.mitarbeiter||[]).filter(email=>{
-            const roles= userRolesMap[email]||[];
+          const tdPos= document.createElement('td');
+          const matched= (ev.mitarbeiter||[]).filter(mail=>{
+            const roles= userRolesMap[mail]||[];
             return roles.includes(pos);
           });
-          if(matched.length>0){
+          if(matched.length){
             tdPos.textContent= matched.join(", ");
-          } 
+          }
           tr.appendChild(tdPos);
         });
-
         tbody.appendChild(tr);
       });
     }
 
     /* ===================
        CSV-Export
-       =================== */
+    =================== */
     async function exportCSV(){
       if(!canRemove){
         showNotification('Nur Admin kann CSV exportieren','error');
@@ -494,23 +484,18 @@ const firebaseConfig = {
         await loadAllUsersRoles();
 
         let csv="Datum;Event;";
-        // Kopfzeile: Theke, Garderobe, Tür, Kasse, Schichtleitung
-        POSITIONS.forEach(pos=>{
-          csv+= pos+";";
-        });
+        POSITIONS.forEach(pos=> csv+= pos+";");
         csv+="\n";
 
-        // Zeilen pro Event
         allEventsData.forEach(ev=>{
-          // Datum
           const dObj= new Date(ev.datum);
           const dd= String(dObj.getDate()).padStart(2,'0');
           const mm= String(dObj.getMonth()+1).padStart(2,'0');
-          const yy= dObj.getFullYear(); 
+          const yy= dObj.getFullYear();
           const dateStr= `${dd}.${mm}.${yy}`;
-          csv+= dateStr+";"+ ev.name+";";
+          csv += dateStr+";"+ ev.name+";";
 
-          // Für jede Position => sammle die employees
+          // pro Position
           POSITIONS.forEach(pos=>{
             const matched= (ev.mitarbeiter||[]).filter(mail=>{
               const roles= userRolesMap[mail]||[];
@@ -525,9 +510,8 @@ const firebaseConfig = {
           csv+="\n";
         });
 
-        // Download
         const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-        const url= URL.createObjectURL(blob);
+        const url=URL.createObjectURL(blob);
         const link=document.createElement('a');
         link.href= url;
         link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
@@ -539,14 +523,12 @@ const firebaseConfig = {
         showNotification("Fehler beim CSV-Export: "+err.message,'error');
       }
     }
-
-    // Lade alle user docs -> userRolesMap
+    // loadAllUsersRoles
     async function loadAllUsersRoles(){
       userRolesMap={};
       const snap= await getDocs(collection(db,"users"));
       snap.forEach(docS=>{
         const d= docS.data();
-        // email -> roles
         userRolesMap[d.email]= d.roles||[];
       });
     }
@@ -566,8 +548,7 @@ const firebaseConfig = {
 
         if(canRemove){
           document.getElementById('adminSection').style.display='block';
-          // Wir zeigen Admin-Bereich erst, wenn wir user roles haben -> hier optional
-          // Admin-Tabelle updaten -> erst user roles laden
+          // user roles laden -> Admin-Tabelle
           loadAllUsersRoles().then(()=>{
             renderAdminTable(data);
           });
@@ -728,28 +709,34 @@ const firebaseConfig = {
         showNotification('Login Fehler: '+err.message,'error');
       }
     }
+
+    // HIER: Dokument in "users" anlegen
     async function registerWithEmail(){
       const nameVal = document.getElementById('usernameRegister').value.trim();
       const emailVal= document.getElementById('emailRegister').value.trim();
       const pwVal   = document.getElementById('passwordRegister').value;
       if(!nameVal||!emailVal||!pwVal){
-        showNotification('Bitte Benutzername,E-Mail,Passwort.','error');
+        showNotification('Bitte Benutzername, E-Mail, Passwort eingeben.','error');
         return;
       }
       try{
-        const cred= await createUserWithEmailAndPassword(auth,emailVal,pwVal);
-        await updateProfile(cred.user,{ displayName: nameVal });
-        // Optional: in "users" collection anlegen
-        // roles: []
-        await addDoc(collection(db,"users"),{
+        // 1) Nutzer in Auth anlegen
+        const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
+
+        // 2) Optional: Displayname setzen
+        await updateProfile(cred.user, { displayName: nameVal });
+
+        // 3) Dokument in "users" anlegen
+        await addDoc(collection(db,"users"), {
           email: emailVal,
           username: nameVal,
-          roles:[]
+          roles: [] // anfangs keine Rollen
         });
+
         showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
       }catch(err){
-        console.error('Reg Fehler',err);
-        showNotification('Reg Fehler: '+err.message,'error');
+        console.error('Registrierung fehlgeschlagen',err);
+        showNotification('Registrierung fehlgeschlagen: '+err.message,'error');
       }
     }
 
@@ -774,7 +761,7 @@ const firebaseConfig = {
       userLabel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
 
-      // Admin: "Mitarbeiter verwalten" (adminUsers.html)
+      // Admin: "Mitarbeiter verwalten" 
       if(canRemove){
         document.getElementById('manageUsersBtn').style.display='inline-block';
       } else {
@@ -787,6 +774,7 @@ const firebaseConfig = {
       document.getElementById('welcomeUser').style.display='none';
       document.getElementById('logoutButton').style.display='none';
       document.getElementById('adminSection').style.display='none';
+
       document.getElementById('eventContainer').innerHTML='';
     }
 
@@ -806,7 +794,7 @@ const firebaseConfig = {
       document.getElementById('logoutButton').addEventListener('click',logout);
 
       // Admin: "Mitarbeiter verwalten"
-      document.getElementById('manageUsersBtn').addEventListener('click',()=>{
+      document.getElementById('manageUsersBtn')?.addEventListener('click',()=>{
         window.location.href='adminUsers.html';
       });
     });
