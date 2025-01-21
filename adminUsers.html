@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+  <title>Mitarbeiter verwalten</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin:0; 
+      padding:20px; 
+      background:#f5f5f5;
+    }
+    h1 { margin-bottom: 16px; }
+    table {
+      width:100%; 
+      border-collapse: collapse; 
+      background:#fff; 
+      border:1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom:20px;
+    }
+    th, td {
+      border:1px solid #ccc;
+      padding:8px; 
+      text-align:left;
+      vertical-align:middle;
+    }
+    .roles {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 8px 12px; 
+      background:#007bff; 
+      color:#fff; 
+      border:none; 
+      border-radius:6px; 
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mitarbeiter verwalten</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>E-Mail</th>
+        <th>Name</th>
+        <th>Rollen</th>
+      </tr>
+    </thead>
+    <tbody id="usersTable"></tbody>
+  </table>
+  <button id="backBtn">Zurück</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+    import {
+      getFirestore, collection, onSnapshot, updateDoc, doc
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+    // Firebase-Konfig
+    const firebaseConfig = {
+      // ...
+    };
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let loggedInUser = null;
+    let canRemove = false;
+
+    // Rollen-Auswahl
+    const ALL_ROLES = ["Theke", "Garderobe", "Tür", "Kasse", "Schichtleitung"];
+
+    function renderUserRow(userDoc) {
+      const tr = document.createElement('tr');
+      const data= userDoc.data();
+      // E-Mail
+      const tdEmail= document.createElement('td');
+      tdEmail.textContent= data.email||"unbekannt";
+      tr.appendChild(tdEmail);
+
+      // Name
+      const tdName= document.createElement('td');
+      tdName.textContent= data.username|| data.displayName || "kein Name";
+      tr.appendChild(tdName);
+
+      // Rollen
+      const tdRoles= document.createElement('td');
+      tdRoles.className='roles';
+
+      (ALL_ROLES).forEach(role=>{
+        const label= document.createElement('label');
+        const chk= document.createElement('input');
+        chk.type='checkbox';
+        chk.value= role;
+        chk.checked= Array.isArray(data.roles) && data.roles.includes(role);
+
+        // Wenn Checkbox geändert -> update Firestore
+        chk.addEventListener('change', async()=>{
+          const userRef= doc(db,"users", userDoc.id);
+          let newRoles= Array.isArray(data.roles)? [...data.roles] : [];
+          if(chk.checked){
+            // hinzufügen
+            if(!newRoles.includes(role)) newRoles.push(role);
+          } else {
+            // entfernen
+            newRoles= newRoles.filter(r=> r!== role);
+          }
+          await updateDoc(userRef, { roles: newRoles });
+        });
+
+        label.appendChild(chk);
+        label.append(" "+role);
+        tdRoles.appendChild(label);
+      });
+
+      tr.appendChild(tdRoles);
+      return tr;
+    }
+
+    function renderUsersTable(snapshot){
+      const tableBody= document.getElementById('usersTable');
+      tableBody.innerHTML='';
+      snapshot.forEach(docData=>{
+        const tr= renderUserRow(docData);
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function loadUsers(){
+      const coll= collection(db,"users");
+      onSnapshot(coll, (snapshot)=>{
+        renderUsersTable(snapshot);
+      }, (err)=>{
+        console.error("Fehler beim Laden der Nutzer:", err);
+      });
+    }
+
+    document.getElementById('backBtn').addEventListener('click', ()=>{
+      window.location.href='index.html';
+    });
+
+    onAuthStateChanged(auth,(user)=>{
+      if(user){
+        loggedInUser= user.email;
+        canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de'); 
+        if(!canRemove){
+          document.body.innerHTML="<p>Nur Admin kann diese Seite ansehen</p>";
+          return;
+        }
+        // Admin -> laden
+        loadUsers();
+      } else {
+        document.body.innerHTML="<p>Bitte einloggen</p>";
+      }
+    });
+  </script>
+</body>
+</html>

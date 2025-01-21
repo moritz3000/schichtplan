@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Kein Zoomen -->
-  <meta name="viewport" content="width=device-width, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 
   <title>Goethebunker Schichtplanung - Übersicht</title>
 
@@ -300,6 +300,11 @@
     <div id="eventContainer"></div>
 
     <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
+	
+	<div id="adminControls" style="display:none;">
+  <button id="manageUsersBtn">Mitarbeiter verwalten</button>
+</div>
+	
     <div id="adminSection">
       <h3>Verfügbarkeits-Tabelle (nur Admin)</h3>
       <table>
@@ -337,15 +342,15 @@
     /* ===================
        Firebase-Konfig 
        =================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-  authDomain: "schichtplan-5c70f.firebaseapp.com",
-  projectId: "schichtplan-5c70f",
-  storageBucket: "schichtplan-5c70f.firebasestorage.app",
-  messagingSenderId: "502149312331",
-  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
-  measurementId: "G-0DL0R5B7LV"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+      authDomain: "schichtplan-5c70f.firebaseapp.com",
+      projectId: "schichtplan-5c70f",
+      storageBucket: "schichtplan-5c70f.firebasestorage.app",
+      messagingSenderId: "502149312331",
+      appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+      measurementId: "G-0DL0R5B7LV"
+    };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
@@ -390,10 +395,6 @@ const firebaseConfig = {
       const container = document.getElementById('eventContainer');
       container.innerHTML = '';
 
-      // Hier wird nichts neu geladen -> wir zeigen nur die Daten
-      // Sortierung nach Datum ist dir überlassen. 
-      // (Optional: data.sort(...) falls gewünscht.)
-
       data.forEach(ev => {
         const div = document.createElement('div');
         div.className='event';
@@ -401,7 +402,6 @@ const firebaseConfig = {
         const dateObj = new Date(ev.datum);
         const dateStr = dateObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'}) || '';
 
-        // Header
         div.innerHTML=`
           <h3>${ev.name}</h3>
           ${canRemove ? `<button class="remove-event" onclick="removeEvent('${ev.id}')">x</button>` : ''}
@@ -416,7 +416,6 @@ const firebaseConfig = {
           nameSpan.className='name-item';
           nameSpan.textContent=name;
           if(canRemove){
-            // Admin: entfernen
             const remBtn = document.createElement('button');
             remBtn.className='remove';
             remBtn.textContent='x';
@@ -649,9 +648,7 @@ const firebaseConfig = {
         updateUIAfterLogin();
 
         // Veranstaltungen direkt initialisieren NACH Login,
-        // damit nicht erst Reload nötig ist
         initializeAppData();
-
       } else {
         loggedInUser=null;
         loggedInEmail=null;
@@ -680,8 +677,6 @@ const firebaseConfig = {
         canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
         loggedInUser = user.displayName || user.email;
         showNotification(`${loggedInUser} ist eingeloggt.`,'success');
-        // KEIN reload nötig, da wir 
-        // initializeAppData() in onAuthStateChanged aufrufen
       }catch(err){
         console.error('Login Fehler',err);
         showNotification('Login Fehler: '+err.message,'error');
@@ -747,9 +742,6 @@ const firebaseConfig = {
        =================== */
     document.addEventListener('DOMContentLoaded',()=>{
       setCurrentDate();
-
-      // Wir warten, bis onAuthStateChanged feuert,
-      // um initializeAppData() erst beim Login-Status zu machen
 
       document.getElementById('loginButton').addEventListener('click',loginWithEmail);
       document.getElementById('registerButton').addEventListener('click',registerWithEmail);
