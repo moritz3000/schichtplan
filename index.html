@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
-
   <title>Goethebunker Schichtplanung - Übersicht</title>
 
   <style>
@@ -83,7 +82,6 @@
       cursor: pointer;
       font-size: 1em;
       margin-bottom: 16px;
-      /* Keine Hover-Effekte */
     }
 
     .event {
@@ -98,20 +96,6 @@
     .event h3 {
       margin: 0 0 8px;
       color: var(--primary-color);
-    }
-
-    .remove-event {
-      background-color: var(--danger-color);
-      color: var(--white);
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      font-size: 1em;
-      cursor: pointer;
-      position: absolute;
-      top: 15px;
-      right: 15px;
     }
 
     .availability {
@@ -213,8 +197,8 @@
       .event {
         padding: 16px;
       }
-      .remove-event {
-        top: 10px; right: 10px; width: 20px; height: 20px;
+      button {
+        font-size: 1em;
       }
     }
   </style>
@@ -300,11 +284,6 @@
     <div id="eventContainer"></div>
 
     <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
-	
-	<div id="adminControls" style="display:none;">
-  <button id="manageUsersBtn">Mitarbeiter verwalten</button>
-</div>
-	
     <div id="adminSection">
       <h3>Verfügbarkeits-Tabelle (nur Admin)</h3>
       <table>
@@ -312,12 +291,20 @@
           <tr>
             <th>Datum</th>
             <th>Event</th>
-            <th>Verfügbare Mitarbeiter</th>
+            <!-- Dynamische Positions-Spalten -->
+            <th>Theke</th>
+            <th>Garderobe</th>
+            <th>Tür</th>
+            <th>Kasse</th>
+            <th>Schichtleitung</th>
           </tr>
         </thead>
         <tbody id="availabilityTable"></tbody>
       </table>
       <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
+
+      <!-- Admin-Button, um auf adminUsers.html zu gehen -->
+      <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
     </div>
   </div>
 
@@ -325,7 +312,7 @@
     <button id="logoutButton">Logout</button>
   </footer>
 
-  <!-- Firebase-Skripte -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
@@ -343,30 +330,30 @@
        Firebase-Konfig 
        =================== */
     const firebaseConfig = {
-      apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-      authDomain: "schichtplan-5c70f.firebaseapp.com",
-      projectId: "schichtplan-5c70f",
-      storageBucket: "schichtplan-5c70f.firebasestorage.app",
-      messagingSenderId: "502149312331",
-      appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
-      measurementId: "G-0DL0R5B7LV"
+      apiKey: "...",
+      authDomain: "...",
+      projectId: "...",
+      storageBucket: "...",
+      messagingSenderId: "...",
+      appId: "...",
+      measurementId: "..."
     };
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    /* ===================
-       Globale Variablen
-       =================== */
     let loggedInUser = null;
     let loggedInEmail = null;
     let canRemove = false;
-    let allEventsData = [];  // Für CSV-Export etc.
+    let allEventsData = [];
 
-    /* ===================
-       Hilfsfunktionen
-       =================== */
+    // Damit wir die Rollen der User kennen, um sie in CSV zuzuordnen
+    let userRolesMap = {}; // email -> array of roles
+
+    // Positions
+    const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
+
     function setCurrentDate() {
       const el = document.getElementById('currentDate');
       const d = new Date();
@@ -456,25 +443,35 @@
     function renderAdminTable(data){
       const tbody = document.getElementById('availabilityTable');
       tbody.innerHTML='';
+
       data.forEach(ev=>{
+        // Format Datum
+        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
         const tr = document.createElement('tr');
 
+        // (1) Datum
         const tdDate = document.createElement('td');
-        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
         tdDate.textContent=dStr;
         tr.appendChild(tdDate);
 
+        // (2) Event
         const tdName = document.createElement('td');
-        tdName.textContent=ev.name;
+        tdName.textContent= ev.name;
         tr.appendChild(tdName);
 
-        const tdStaff = document.createElement('td');
-        (ev.mitarbeiter||[]).forEach(m=>{
-          const sp = document.createElement('span');
-          sp.textContent=m+" | ";
-          tdStaff.appendChild(sp);
+        // Dann pro Position eine Spalte
+        POSITIONS.forEach(pos=>{
+          const tdPos = document.createElement('td');
+          // Filtere alle, die in ev.mitarbeiter enthalten sind und in userRolesMap die Rolle pos haben
+          const matched = (ev.mitarbeiter||[]).filter(email=>{
+            const roles= userRolesMap[email]||[];
+            return roles.includes(pos);
+          });
+          if(matched.length>0){
+            tdPos.textContent= matched.join(", ");
+          } 
+          tr.appendChild(tdPos);
         });
-        tr.appendChild(tdStaff);
 
         tbody.appendChild(tr);
       });
@@ -483,7 +480,7 @@
     /* ===================
        CSV-Export
        =================== */
-    function exportCSV(){
+    async function exportCSV(){
       if(!canRemove){
         showNotification('Nur Admin kann CSV exportieren','error');
         return;
@@ -492,20 +489,66 @@
         showNotification('Keine Events zum Exportieren','info');
         return;
       }
-      let csvContent="Datum;Event;Mitarbeiter\n";
-      allEventsData.forEach(ev=>{
-        const dStr = new Date(ev.datum).toLocaleDateString('de-DE');
-        const staff = (ev.mitarbeiter||[]).join(",");
-        csvContent += `${dStr};${ev.name};${staff}\n`;
+      try {
+        // Lade alle User, baue rolesMap
+        await loadAllUsersRoles();
+
+        let csv="Datum;Event;";
+        // Kopfzeile: Theke, Garderobe, Tür, Kasse, Schichtleitung
+        POSITIONS.forEach(pos=>{
+          csv+= pos+";";
+        });
+        csv+="\n";
+
+        // Zeilen pro Event
+        allEventsData.forEach(ev=>{
+          // Datum
+          const dObj= new Date(ev.datum);
+          const dd= String(dObj.getDate()).padStart(2,'0');
+          const mm= String(dObj.getMonth()+1).padStart(2,'0');
+          const yy= dObj.getFullYear(); 
+          const dateStr= `${dd}.${mm}.${yy}`;
+          csv+= dateStr+";"+ ev.name+";";
+
+          // Für jede Position => sammle die employees
+          POSITIONS.forEach(pos=>{
+            const matched= (ev.mitarbeiter||[]).filter(mail=>{
+              const roles= userRolesMap[mail]||[];
+              return roles.includes(pos);
+            });
+            if(matched.length){
+              csv+= matched.join(",")+";";
+            } else {
+              csv+=";";
+            }
+          });
+          csv+="\n";
+        });
+
+        // Download
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url= URL.createObjectURL(blob);
+        const link=document.createElement('a');
+        link.href= url;
+        link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch(err){
+        console.error("CSV Fehler:", err);
+        showNotification("Fehler beim CSV-Export: "+err.message,'error');
+      }
+    }
+
+    // Lade alle user docs -> userRolesMap
+    async function loadAllUsersRoles(){
+      userRolesMap={};
+      const snap= await getDocs(collection(db,"users"));
+      snap.forEach(docS=>{
+        const d= docS.data();
+        // email -> roles
+        userRolesMap[d.email]= d.roles||[];
       });
-      const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-      const link=document.createElement('a');
-      link.href=url;
-      link.setAttribute('download','verfuegbarkeiten.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
 
     /* ===================
@@ -523,7 +566,11 @@
 
         if(canRemove){
           document.getElementById('adminSection').style.display='block';
-          renderAdminTable(data);
+          // Wir zeigen Admin-Bereich erst, wenn wir user roles haben -> hier optional
+          // Admin-Tabelle updaten -> erst user roles laden
+          loadAllUsersRoles().then(()=>{
+            renderAdminTable(data);
+          });
         } else {
           document.getElementById('adminSection').style.display='none';
         }
@@ -576,7 +623,8 @@
           name:eventNameVal,
           startzeit:eventTime,
           mitarbeiter:[],
-          comments:[]
+          comments:[],
+          importantInfo:""
         });
         showNotification('Event hinzugefügt');
         document.getElementById('eventForm').reset();
@@ -646,8 +694,6 @@
         loggedInEmail = user.email;
         canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
         updateUIAfterLogin();
-
-        // Veranstaltungen direkt initialisieren NACH Login,
         initializeAppData();
       } else {
         loggedInUser=null;
@@ -693,6 +739,13 @@
       try{
         const cred= await createUserWithEmailAndPassword(auth,emailVal,pwVal);
         await updateProfile(cred.user,{ displayName: nameVal });
+        // Optional: in "users" collection anlegen
+        // roles: []
+        await addDoc(collection(db,"users"),{
+          email: emailVal,
+          username: nameVal,
+          roles:[]
+        });
         showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
       }catch(err){
         console.error('Reg Fehler',err);
@@ -720,6 +773,13 @@
       userLabel.textContent='Willkommen, '+loggedInUser+'!';
       userLabel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
+
+      // Admin: "Mitarbeiter verwalten" (adminUsers.html)
+      if(canRemove){
+        document.getElementById('manageUsersBtn').style.display='inline-block';
+      } else {
+        document.getElementById('manageUsersBtn').style.display='none';
+      }
     }
     function updateUIAfterLogout(){
       document.getElementById('authSection').style.display='block';
@@ -727,8 +787,6 @@
       document.getElementById('welcomeUser').style.display='none';
       document.getElementById('logoutButton').style.display='none';
       document.getElementById('adminSection').style.display='none';
-
-      // Optional: Clear event list
       document.getElementById('eventContainer').innerHTML='';
     }
 
@@ -746,15 +804,20 @@
       document.getElementById('loginButton').addEventListener('click',loginWithEmail);
       document.getElementById('registerButton').addEventListener('click',registerWithEmail);
       document.getElementById('logoutButton').addEventListener('click',logout);
+
+      // Admin: "Mitarbeiter verwalten"
+      document.getElementById('manageUsersBtn').addEventListener('click',()=>{
+        window.location.href='adminUsers.html';
+      });
     });
 
-    // Für Inline Events
-    window.exportCSV   = exportCSV;
+    // Für Inline
     window.removeEvent = removeEvent;
     window.removeName  = removeName;
     window.confirmForEvent = confirmForEvent;
     window.addEvent    = addEvent;
     window.toggleOtherEvent= toggleOtherEvent;
+    window.exportCSV   = exportCSV;
   </script>
 </body>
 </html>
