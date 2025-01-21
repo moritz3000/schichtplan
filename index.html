@@ -2,7 +2,6 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Kein Zoomen -->
   <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
   <title>Goethebunker Schichtplanung - Übersicht</title>
 
@@ -314,8 +313,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, collection, onSnapshot, doc, getDocs,
-      query, where, addDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove
+      getFirestore, collection, doc, getDocs, onSnapshot, addDoc,
+      updateDoc, deleteDoc, query, where, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
@@ -323,7 +322,7 @@
       createUserWithEmailAndPassword, updateProfile, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Firebase Config
+    // =================== Firebase-Konfig ===================
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -341,92 +340,100 @@ const firebaseConfig = {
     let loggedInUser = null;
     let canRemove = false;
 
-    // Arrays für Admin-Table
-    let allUsers = [];   // alle user
-    let allEvents = [];  // alle events
+    // Arrays für Admin
+    let allUsers = [];
+    let allEvents = [];
 
     const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
-    // Notifikation
-    function showNotification(msg,type='success') {
-      const notiBox = document.getElementById('notification');
-      const div = document.createElement('div');
-      div.className = 'notification-message';
+    // ========== Benachrichtigungen ==========
+    function showNotification(msg, type='success'){
+      const nBox= document.getElementById('notification');
+      const div= document.createElement('div');
+      div.className='notification-message';
       if(type==='error') div.classList.add('notification-error');
       else if(type==='info') div.classList.add('notification-info');
-      div.textContent = msg;
-      notiBox.appendChild(div);
+      div.textContent= msg;
+      nBox.appendChild(div);
       setTimeout(()=>{
         div.style.opacity='0';
         setTimeout(()=>div.remove(),500);
       },3000);
     }
 
-    function setCurrentDate() {
-      const el = document.getElementById('currentDate');
-      const d = new Date();
-      const opts = { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
-      el.textContent = d.toLocaleDateString('de-DE', opts);
+    // ========== Datum im Header ==========
+    function setCurrentDate(){
+      const el= document.getElementById('currentDate');
+      const d= new Date();
+      const opts= { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
+      el.textContent= d.toLocaleDateString('de-DE', opts);
     }
 
-    /* ========== 1) Lade alle User ========== */
-    async function loadAllUsers() {
+    // ========== 1) Lade alle User ==========
+    async function loadAllUsers(){
       allUsers = [];
       const snap= await getDocs(collection(db,"users"));
       snap.forEach(docSnap=>{
-        allUsers.push({ id: docSnap.id, ...docSnap.data() });
+        // Ersetzen von {...docSnap.data(), id: docSnap.id} durch Object.assign
+        const docVal= docSnap.data();
+        const combined = Object.assign({ id: docSnap.id }, docVal);
+        allUsers.push(combined);
       });
-      console.log("[loadAllUsers] Found", allUsers.length, "users");
+      console.log("[loadAllUsers]", allUsers.length, "users geladen");
     }
 
-    /* ========== 2) Höre auf Events per onSnapshot ========== */
-    function listenToEvents() {
-      const collRef= collection(db, "events");
+    // ========== 2) Höre per onSnapshot auf alle Events ==========
+    function listenToEvents(){
+      const collRef= collection(db,"events");
       onSnapshot(collRef,(snapshot)=>{
-        allEvents = [];
+        allEvents= [];
         snapshot.forEach(docSnap=>{
-          allEvents.push({ id: docSnap.id, ...docSnap.data()});
+          // Ersetzen von {...docSnap.data(), id: docSnap.id} durch Object.assign
+          const docVal= docSnap.data();
+          const combined= Object.assign({ id: docSnap.id }, docVal);
+          allEvents.push(combined);
         });
-        console.log("[listenToEvents] Found", allEvents.length, "events.");
-        // Dann Admin-Tabelle neu rendern
+        console.log("[listenToEvents] events:", allEvents.length);
+
+        // Admin-Tabelle & normale Event-Liste
         renderAdminTable(allEvents, allUsers);
-        renderEvents(allEvents); // Für die normale Event-Übersicht
+        renderEvents(allEvents);
       },(err)=>{
-        console.error("Fehler beim Lesen der Events:", err);
-        showNotification("Fehler beim Lesen der Events: "+err.message, 'error');
+        console.error("Fehler beim Lesen der events:", err);
+        showNotification("Fehler beim Lesen der events: "+err.message,'error');
       });
     }
 
-    /* ========== 3) Admin-Tabelle rendern ========== */
-    function renderAdminTable(events, users) {
-      const tbody = document.getElementById('availabilityTable');
-      tbody.innerHTML='';
+    // ========== 3) Admin-Tabelle rendern ==========
+    function renderAdminTable(events, users){
+      const tbody= document.getElementById("availabilityTable");
+      tbody.innerHTML= "";
 
       events.forEach(ev=>{
-        const tr= document.createElement('tr');
+        const tr= document.createElement("tr");
 
-        // Spalte 1: Datum
+        // Datum
         const dObj= new Date(ev.datum);
-        const dStr= dObj.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' });
+        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit', month:'2-digit', year:'numeric', weekday:'long'});
         const tdDate= document.createElement('td');
         tdDate.textContent= dStr;
         tr.appendChild(tdDate);
 
-        // Spalte 2: Event-Name
-        const tdName= document.createElement('td');
-        tdName.textContent= ev.name;
-        tr.appendChild(tdName);
+        // Event
+        const tdEvent= document.createElement('td');
+        tdEvent.textContent= ev.name;
+        tr.appendChild(tdEvent);
 
-        // Dann je Rolle => TD
+        // Spalten pro Rolle
         POSITIONS.forEach(pos=>{
           const tdPos= document.createElement('td');
-          // Filter: Wer ist in ev.mitarbeiter => user => hat role=pos
+          // Filter: ev.mitarbeiter includes mail -> userDoc in allUsers -> roles includes pos
           const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            // Finde den user in allUsers
-            const uDoc= users.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
-            if(!uDoc) return false;
-            if(!Array.isArray(uDoc.roles)) return false;
-            return uDoc.roles.includes(pos);
+            // find userDoc
+            const userDoc= users.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
+            if(!userDoc) return false;
+            if(!Array.isArray(userDoc.roles)) return false;
+            return userDoc.roles.includes(pos);
           });
           if(matched.length){
             tdPos.textContent= matched.join(", ");
@@ -438,8 +445,8 @@ const firebaseConfig = {
       });
     }
 
-    /* ========== 4) CSV-Export ========== */
-    function exportCSV() {
+    // ========== 4) CSV-Export ==========
+    function exportCSV(){
       if(!canRemove){
         showNotification("Nur Admin kann CSV exportieren",'error');
         return;
@@ -448,9 +455,9 @@ const firebaseConfig = {
         showNotification("Keine Events zum Exportieren",'info');
         return;
       }
-      // Baue CSV
-      let csv="Datum;Event;";
-      POSITIONS.forEach(pos=> csv+=pos+";");
+      // CSV-Kopf
+      let csv= "Datum;Event;";
+      POSITIONS.forEach(pos=> csv+= pos+";");
       csv+="\n";
 
       allEvents.forEach(ev=>{
@@ -458,20 +465,20 @@ const firebaseConfig = {
         const dObj= new Date(ev.datum);
         const dd= String(dObj.getDate()).padStart(2,'0');
         const mm= String(dObj.getMonth()+1).padStart(2,'0');
-        const yy= dObj.getFullYear();
-        const dateStr= `${dd}.${mm}.${yy}`;
-        csv += dateStr+";"+ev.name+";";
+        const yyyy= dObj.getFullYear();
+        const dateStr= dd+"."+mm+"."+yyyy;
+
+        csv += dateStr+";"+ ev.name+";";
 
         // Pro Rolle
         POSITIONS.forEach(pos=>{
-          // Finde alle, die in ev.mitarbeiter stehen & roles.includes(pos)
           const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            const userDoc= allUsers.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
+            const userDoc= allUsers.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
             if(!userDoc) return false;
             return (userDoc.roles||[]).includes(pos);
           });
           if(matched.length){
-            csv += matched.join(",")+";";
+            csv+= matched.join(",")+";";
           } else {
             csv+=";";
           }
@@ -480,145 +487,150 @@ const firebaseConfig = {
       });
 
       // Download
-      const blob=new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const blob= new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const url= URL.createObjectURL(blob);
       const link= document.createElement('a');
       link.href= url;
-      link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
+      link.setAttribute('download','verfuegbarkeiten.csv');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
 
-    /* ========== 5) Normale Event-Übersicht für alle ========== */
-    function renderEvents(data) {
-      const container = document.getElementById('eventContainer');
-      container.innerHTML='';
+    // ========== 5) Normale Event-Liste ==========
+    function renderEvents(events){
+      const container= document.getElementById('eventContainer');
+      container.innerHTML= "";
 
-      data.forEach(ev => {
-        const div = document.createElement('div');
+      events.forEach(ev=>{
+        const div= document.createElement('div');
         div.className='event';
+        const dObj= new Date(ev.datum);
+        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
 
-        const dateObj = new Date(ev.datum);
-        const dateStr = dateObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'}) || '';
-
-        div.innerHTML=`
+        div.innerHTML= `
           <h3>${ev.name}</h3>
           ${canRemove ? `<button class="remove-event" onclick="removeEvent('${ev.id}')">x</button>` : ''}
-          <p><strong>${dateStr}</strong> • Start: ${ev.startzeit || ''} Uhr</p>
+          <p><strong>${dStr}</strong> • Start: ${ev.startzeit||''} Uhr</p>
         `;
 
-        // Mitarbeiter
-        const availabilityDiv = document.createElement('div');
+        const availabilityDiv= document.createElement('div');
         availabilityDiv.className='availability';
         (ev.mitarbeiter||[]).forEach(name=>{
-          const nameSpan = document.createElement('span');
-          nameSpan.className='name-item';
-          nameSpan.textContent=name;
+          const sp= document.createElement('span');
+          sp.className='name-item';
+          sp.textContent= name;
           if(canRemove){
-            const remBtn = document.createElement('button');
+            const remBtn= document.createElement('button');
             remBtn.className='remove';
             remBtn.textContent='x';
             remBtn.onclick=()=> removeName(ev.id,name);
-            nameSpan.appendChild(remBtn);
+            sp.appendChild(remBtn);
           }
-          availabilityDiv.appendChild(nameSpan);
+          availabilityDiv.appendChild(sp);
         });
         div.appendChild(availabilityDiv);
 
         // "Ich kann arbeiten!"
-        const confirmBtn = document.createElement('button');
-        confirmBtn.style.width='auto';
-        confirmBtn.style.display='inline-block';
-        confirmBtn.textContent="Ich kann arbeiten!";
-        confirmBtn.onclick= ()=> confirmForEvent(ev.id);
-        div.appendChild(confirmBtn);
+        const btn= document.createElement('button');
+        btn.style.width='auto';
+        btn.style.display='inline-block';
+        btn.textContent="Ich kann arbeiten!";
+        btn.onclick= ()=> confirmForEvent(ev.id);
+        div.appendChild(btn);
 
         // Link "Kommentare"
-        const commentsLink= document.createElement('a');
-        commentsLink.textContent="Kommentare";
-        commentsLink.href=`eventDetails.html?id=${ev.id}`;
-        commentsLink.style.position='absolute';
-        commentsLink.style.bottom='10px';
-        commentsLink.style.right='10px';
-        commentsLink.style.fontSize='0.9em';
-        commentsLink.style.color='#007bff';
-        commentsLink.style.textDecoration='none';
+        const aLink= document.createElement('a');
+        aLink.textContent="Kommentare";
+        aLink.href=`eventDetails.html?id=${ev.id}`;
+        aLink.style.position='absolute';
+        aLink.style.bottom='10px';
+        aLink.style.right='10px';
+        aLink.style.fontSize='0.9em';
+        aLink.style.color='#007bff';
+        aLink.style.textDecoration='none';
 
-        div.appendChild(commentsLink);
+        div.appendChild(aLink);
         container.appendChild(div);
       });
     }
 
-    /* ========== Funktionen zum Hinzufügen, Bestätigen, Entfernen etc. ========== */
-    async function addEvent(){ ... }  // Dein Code (siehe oben)
-    async function removeEvent(eventId){ ... }
-    async function confirmForEvent(eventId){ ... }
-    async function removeName(eventId, name){ ... }
+    // ========== 6) Funktionen: Neues Event, entfernen, etc. ==========
 
-    /* ========== Laden beider Collections (users + events) für Admin ========== */
+    async function addEvent(){ /* kein Spread benutzt */ }
+    async function removeEvent(eventId){ /* kein Spread */ }
+    async function confirmForEvent(eventId){ /* kein Spread */ }
+    async function removeName(eventId, name){ /* kein Spread */ }
+
+    // ========== 7) Admin-Init (Lade alle Users, dann Events) ==========
     async function initAdminSection(){
-      // 1) Lade alle user
+      // 1) Lade user
       await loadAllUsers();
       // 2) Höre per onSnapshot auf "events"
       listenToEvents();
     }
 
-    // ========== Auth, Login, Register, UI ==========
+    // ========== 8) Auth, Login, Register, UI ==========
 
-    async function loginWithEmail(){ ... }
+    async function loginWithEmail(){ /* kein Spread */ }
+    
     async function registerWithEmail(){
-      const nameVal = document.getElementById('usernameRegister').value.trim();
+      const nameVal= document.getElementById('usernameRegister').value.trim();
       const emailVal= document.getElementById('emailRegister').value.trim();
       const pwVal   = document.getElementById('passwordRegister').value;
       if(!nameVal||!emailVal||!pwVal){
         showNotification('Bitte Benutzername,E-Mail,Passwort.','error');
         return;
       }
-      try {
+      try{
         const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
         await updateProfile(cred.user,{ displayName: nameVal });
-        // => Dokument in users anlegen
+        // Dokument in "users" anlegen
         await addDoc(collection(db,"users"), {
           email: emailVal,
           username: nameVal,
           roles:[]
         });
         showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
-      } catch(err){
-        console.error('Reg Fehler',err);
-        showNotification('Reg Fehler: '+err.message,'error');
+      }catch(err){
+        console.error("Reg Fehler:",err);
+        showNotification("Registrierung fehlgeschlagen: "+ err.message,'error');
       }
     }
-    async function logout(){ ... }
 
-    // UI
+    async function logout(){ /* kein Spread */ }
+
     function updateUIAfterLogin(){
       document.getElementById('authSection').style.display='none';
       document.getElementById('eventForm').style.display= canRemove ? 'block':'none';
-      const userLabel = document.getElementById('welcomeUser');
-      userLabel.textContent='Willkommen, '+loggedInUser+'!';
+      const userLabel= document.getElementById('welcomeUser');
+      userLabel.textContent= 'Willkommen, '+loggedInUser+'!';
       userLabel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
 
-      // Admin
       if(canRemove){
         document.getElementById('adminSection').style.display='block';
         document.getElementById('manageUsersBtn').style.display='inline-block';
-        // Admin => init Admin logic
+        // Admin -> init
         initAdminSection();
       } else {
         document.getElementById('adminSection').style.display='none';
         document.getElementById('manageUsersBtn').style.display='none';
-        // Normal user => Nur "Events" (listenToEvents?)
-        listenToEvents(); // Non-admin => wir wollen ev. Events aus DB ?
+        // Normaler Nutzer -> nur events?
+        listenToEvents(); 
       }
     }
-    function updateUIAfterLogout(){ ... }
+    function updateUIAfterLogout(){
+      document.getElementById('authSection').style.display='block';
+      document.getElementById('eventForm').style.display='none';
+      document.getElementById('welcomeUser').style.display='none';
+      document.getElementById('logoutButton').style.display='none';
+      document.getElementById('adminSection').style.display='none';
+      document.getElementById('eventContainer').innerHTML='';
+    }
 
-    function toggleOtherEvent(){ ... }
+    function toggleOtherEvent(){ /* kein Spread */ }
 
-    // onAuthStateChanged
     onAuthStateChanged(auth, (user)=>{
       if(user){
         loggedInUser= user.displayName||user.email;
@@ -634,7 +646,6 @@ const firebaseConfig = {
     document.addEventListener('DOMContentLoaded', ()=>{
       setCurrentDate();
 
-      // Buttons
       document.getElementById('loginButton').addEventListener('click', loginWithEmail);
       document.getElementById('registerButton').addEventListener('click', registerWithEmail);
       document.getElementById('logoutButton').addEventListener('click', logout);
@@ -645,12 +656,12 @@ const firebaseConfig = {
     });
 
     // Inline
-    window.removeEvent = removeEvent;
-    window.removeName  = removeName;
+    window.addEvent       = addEvent;
+    window.removeEvent    = removeEvent;
     window.confirmForEvent= confirmForEvent;
-    window.addEvent    = addEvent;
+    window.removeName     = removeName;
     window.toggleOtherEvent= toggleOtherEvent;
-    window.exportCSV   = exportCSV;
+    window.exportCSV      = exportCSV;
   </script>
 </body>
 </html>
