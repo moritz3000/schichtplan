@@ -291,7 +291,6 @@
           <tr>
             <th>Datum</th>
             <th>Event</th>
-            <!-- Beispiel: Spalten für Positionen -->
             <th>Theke</th>
             <th>Garderobe</th>
             <th>Tür</th>
@@ -302,7 +301,6 @@
         <tbody id="availabilityTable"></tbody>
       </table>
       <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
-      <!-- Admin-Button, um adminUsers.html zu öffnen -->
       <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
     </div>
   </div>
@@ -311,21 +309,22 @@
     <button id="logoutButton">Logout</button>
   </footer>
 
-  <!-- Firebase -->
+  <!-- Firebase + JS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, collection, addDoc, updateDoc, deleteDoc,
-      doc, onSnapshot, query, where, arrayUnion, arrayRemove, getDocs
+      getFirestore, collection, onSnapshot, doc, getDocs,
+      query, where, addDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
-      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      onAuthStateChanged, updateProfile, setPersistence,
-      browserLocalPersistence, browserSessionPersistence
+      getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+      browserSessionPersistence, signInWithEmailAndPassword,
+      createUserWithEmailAndPassword, updateProfile, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    const firebaseConfig = {
+    // Firebase Config
+const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
   projectId: "schichtplan-5c70f",
@@ -340,21 +339,15 @@
     const auth = getAuth(app);
 
     let loggedInUser = null;
-    let loggedInEmail = null;
     let canRemove = false;
-    let allEventsData = [];
 
-    // userRolesMap: email -> array of roles, für CSV
-    let userRolesMap = {};
+    // Arrays für Admin-Table
+    let allUsers = [];   // alle user
+    let allEvents = [];  // alle events
+
     const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
-    function setCurrentDate() {
-      const el = document.getElementById('currentDate');
-      const d = new Date();
-      const opts = { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
-      el.textContent = d.toLocaleDateString('de-DE', opts);
-    }
-
+    // Notifikation
     function showNotification(msg,type='success') {
       const notiBox = document.getElementById('notification');
       const div = document.createElement('div');
@@ -369,12 +362,138 @@
       },3000);
     }
 
-    /* ===================
-       Events rendern
-    =================== */
+    function setCurrentDate() {
+      const el = document.getElementById('currentDate');
+      const d = new Date();
+      const opts = { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
+      el.textContent = d.toLocaleDateString('de-DE', opts);
+    }
+
+    /* ========== 1) Lade alle User ========== */
+    async function loadAllUsers() {
+      allUsers = [];
+      const snap= await getDocs(collection(db,"users"));
+      snap.forEach(docSnap=>{
+        allUsers.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      console.log("[loadAllUsers] Found", allUsers.length, "users");
+    }
+
+    /* ========== 2) Höre auf Events per onSnapshot ========== */
+    function listenToEvents() {
+      const collRef= collection(db, "events");
+      onSnapshot(collRef,(snapshot)=>{
+        allEvents = [];
+        snapshot.forEach(docSnap=>{
+          allEvents.push({ id: docSnap.id, ...docSnap.data()});
+        });
+        console.log("[listenToEvents] Found", allEvents.length, "events.");
+        // Dann Admin-Tabelle neu rendern
+        renderAdminTable(allEvents, allUsers);
+        renderEvents(allEvents); // Für die normale Event-Übersicht
+      },(err)=>{
+        console.error("Fehler beim Lesen der Events:", err);
+        showNotification("Fehler beim Lesen der Events: "+err.message, 'error');
+      });
+    }
+
+    /* ========== 3) Admin-Tabelle rendern ========== */
+    function renderAdminTable(events, users) {
+      const tbody = document.getElementById('availabilityTable');
+      tbody.innerHTML='';
+
+      events.forEach(ev=>{
+        const tr= document.createElement('tr');
+
+        // Spalte 1: Datum
+        const dObj= new Date(ev.datum);
+        const dStr= dObj.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' });
+        const tdDate= document.createElement('td');
+        tdDate.textContent= dStr;
+        tr.appendChild(tdDate);
+
+        // Spalte 2: Event-Name
+        const tdName= document.createElement('td');
+        tdName.textContent= ev.name;
+        tr.appendChild(tdName);
+
+        // Dann je Rolle => TD
+        POSITIONS.forEach(pos=>{
+          const tdPos= document.createElement('td');
+          // Filter: Wer ist in ev.mitarbeiter => user => hat role=pos
+          const matched= (ev.mitarbeiter||[]).filter(mail=>{
+            // Finde den user in allUsers
+            const uDoc= users.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
+            if(!uDoc) return false;
+            if(!Array.isArray(uDoc.roles)) return false;
+            return uDoc.roles.includes(pos);
+          });
+          if(matched.length){
+            tdPos.textContent= matched.join(", ");
+          }
+          tr.appendChild(tdPos);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ========== 4) CSV-Export ========== */
+    function exportCSV() {
+      if(!canRemove){
+        showNotification("Nur Admin kann CSV exportieren",'error');
+        return;
+      }
+      if(!allEvents.length){
+        showNotification("Keine Events zum Exportieren",'info');
+        return;
+      }
+      // Baue CSV
+      let csv="Datum;Event;";
+      POSITIONS.forEach(pos=> csv+=pos+";");
+      csv+="\n";
+
+      allEvents.forEach(ev=>{
+        // Datum
+        const dObj= new Date(ev.datum);
+        const dd= String(dObj.getDate()).padStart(2,'0');
+        const mm= String(dObj.getMonth()+1).padStart(2,'0');
+        const yy= dObj.getFullYear();
+        const dateStr= `${dd}.${mm}.${yy}`;
+        csv += dateStr+";"+ev.name+";";
+
+        // Pro Rolle
+        POSITIONS.forEach(pos=>{
+          // Finde alle, die in ev.mitarbeiter stehen & roles.includes(pos)
+          const matched= (ev.mitarbeiter||[]).filter(mail=>{
+            const userDoc= allUsers.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
+            if(!userDoc) return false;
+            return (userDoc.roles||[]).includes(pos);
+          });
+          if(matched.length){
+            csv += matched.join(",")+";";
+          } else {
+            csv+=";";
+          }
+        });
+        csv+="\n";
+      });
+
+      // Download
+      const blob=new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url= URL.createObjectURL(blob);
+      const link= document.createElement('a');
+      link.href= url;
+      link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /* ========== 5) Normale Event-Übersicht für alle ========== */
     function renderEvents(data) {
       const container = document.getElementById('eventContainer');
-      container.innerHTML = '';
+      container.innerHTML='';
 
       data.forEach(ev => {
         const div = document.createElement('div');
@@ -407,16 +526,16 @@
         });
         div.appendChild(availabilityDiv);
 
-        // Button "Ich kann arbeiten!"
+        // "Ich kann arbeiten!"
         const confirmBtn = document.createElement('button');
         confirmBtn.style.width='auto';
         confirmBtn.style.display='inline-block';
         confirmBtn.textContent="Ich kann arbeiten!";
-        confirmBtn.onclick=()=> confirmForEvent(ev.id);
+        confirmBtn.onclick= ()=> confirmForEvent(ev.id);
         div.appendChild(confirmBtn);
 
-        // Link "Kommentare" -> details-Seite
-        const commentsLink = document.createElement('a');
+        // Link "Kommentare"
+        const commentsLink= document.createElement('a');
         commentsLink.textContent="Kommentare";
         commentsLink.href=`eventDetails.html?id=${ev.id}`;
         commentsLink.style.position='absolute';
@@ -431,328 +550,49 @@
       });
     }
 
-    /* ===================
-       Admin-Tabelle
-    =================== */
-    function renderAdminTable(data){
-      const tbody = document.getElementById('availabilityTable');
-      tbody.innerHTML='';
+    /* ========== Funktionen zum Hinzufügen, Bestätigen, Entfernen etc. ========== */
+    async function addEvent(){ ... }  // Dein Code (siehe oben)
+    async function removeEvent(eventId){ ... }
+    async function confirmForEvent(eventId){ ... }
+    async function removeName(eventId, name){ ... }
 
-      data.forEach(ev=>{
-        const tr = document.createElement('tr');
-        // Datum
-        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-        
-        const tdDate = document.createElement('td');
-        tdDate.textContent= dStr;
-        tr.appendChild(tdDate);
-
-        const tdName = document.createElement('td');
-        tdName.textContent= ev.name;
-        tr.appendChild(tdName);
-
-        // Für jede Position -> TD
-        POSITIONS.forEach(pos=>{
-          const tdPos= document.createElement('td');
-          const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            const roles= userRolesMap[mail]||[];
-            return roles.includes(pos);
-          });
-          if(matched.length){
-            tdPos.textContent= matched.join(", ");
-          }
-          tr.appendChild(tdPos);
-        });
-        tbody.appendChild(tr);
-      });
+    /* ========== Laden beider Collections (users + events) für Admin ========== */
+    async function initAdminSection(){
+      // 1) Lade alle user
+      await loadAllUsers();
+      // 2) Höre per onSnapshot auf "events"
+      listenToEvents();
     }
 
-    /* ===================
-       CSV-Export
-    =================== */
-    async function exportCSV(){
-      if(!canRemove){
-        showNotification('Nur Admin kann CSV exportieren','error');
-        return;
-      }
-      if(!allEventsData.length){
-        showNotification('Keine Events zum Exportieren','info');
-        return;
-      }
-      try {
-        // Lade alle User, baue rolesMap
-        await loadAllUsersRoles();
+    // ========== Auth, Login, Register, UI ==========
 
-        let csv="Datum;Event;";
-        POSITIONS.forEach(pos=> csv+= pos+";");
-        csv+="\n";
-
-        allEventsData.forEach(ev=>{
-          const dObj= new Date(ev.datum);
-          const dd= String(dObj.getDate()).padStart(2,'0');
-          const mm= String(dObj.getMonth()+1).padStart(2,'0');
-          const yy= dObj.getFullYear();
-          const dateStr= `${dd}.${mm}.${yy}`;
-          csv += dateStr+";"+ ev.name+";";
-
-          // pro Position
-          POSITIONS.forEach(pos=>{
-            const matched= (ev.mitarbeiter||[]).filter(mail=>{
-              const roles= userRolesMap[mail]||[];
-              return roles.includes(pos);
-            });
-            if(matched.length){
-              csv+= matched.join(",")+";";
-            } else {
-              csv+=";";
-            }
-          });
-          csv+="\n";
-        });
-
-        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-        const url=URL.createObjectURL(blob);
-        const link=document.createElement('a');
-        link.href= url;
-        link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch(err){
-        console.error("CSV Fehler:", err);
-        showNotification("Fehler beim CSV-Export: "+err.message,'error');
-      }
-    }
-    // loadAllUsersRoles
-    async function loadAllUsersRoles(){
-      userRolesMap={};
-      const snap= await getDocs(collection(db,"users"));
-      snap.forEach(docS=>{
-        const d= docS.data();
-        userRolesMap[d.email]= d.roles||[];
-      });
-    }
-
-    /* ===================
-       Firestore-Listener
-       =================== */
-    function initializeAppData(){
-      const coll=collection(db,"events");
-      onSnapshot(coll,(snapshot)=>{
-        const data=[];
-        snapshot.forEach(docData=>{
-          data.push({ id:docData.id, ...docData.data()});
-        });
-        allEventsData = data; 
-        renderEvents(data);
-
-        if(canRemove){
-          document.getElementById('adminSection').style.display='block';
-          // user roles laden -> Admin-Tabelle
-          loadAllUsersRoles().then(()=>{
-            renderAdminTable(data);
-          });
-        } else {
-          document.getElementById('adminSection').style.display='none';
-        }
-      },(err)=>{
-        console.error('Fehler beim Abrufen:',err);
-        showNotification('Fehler beim Abrufen der Events','error');
-      });
-    }
-
-    /* ===================
-       Admin: neues Event
-       =================== */
-    async function addEvent(){
-      if(!canRemove){
-        showNotification('Nur Admin kann Events anlegen','error');
-        return;
-      }
-      let eventNameVal = document.getElementById('eventName').value.trim();
-      if(!eventNameVal){
-        showNotification('Bitte Eventnamen angeben','error');
-        return;
-      }
-      if(eventNameVal==='sonstige'){
-        const otherVal = document.getElementById('otherEvent').value.trim();
-        if(!otherVal){
-          showNotification('Bitte sonstiges Event benennen','error');
-          return;
-        }
-        eventNameVal = otherVal;
-      }
-      const eventDate = document.getElementById('eventDate').value;
-      const eventTime = document.getElementById('eventTime').value;
-      if(!eventDate || !eventTime){
-        showNotification('Bitte Datum und Uhrzeit wählen','error');
-        return;
-      }
-      try {
-        const qy=query(collection(db,"events"),
-          where("datum","==",eventDate),
-          where("name","==",eventNameVal),
-          where("startzeit","==",eventTime)
-        );
-        const snap=await getDocs(qy);
-        if(!snap.empty){
-          showNotification('Event existiert bereits','error');
-          return;
-        }
-        await addDoc(collection(db,"events"),{
-          datum:eventDate,
-          name:eventNameVal,
-          startzeit:eventTime,
-          mitarbeiter:[],
-          comments:[],
-          importantInfo:""
-        });
-        showNotification('Event hinzugefügt');
-        document.getElementById('eventForm').reset();
-        document.getElementById('otherEventContainer').style.display='none';
-      }catch(err){
-        console.error('Fehler beim Hinzufügen',err);
-        showNotification('Fehler beim Hinzufügen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Admin: Event löschen
-       =================== */
-    async function removeEvent(eventId){
-      if(!canRemove)return;
-      if(!confirm('Möchtest du dieses Event löschen?'))return;
-      try {
-        await deleteDoc(doc(db,"events",eventId));
-        showNotification('Event gelöscht','info');
-      }catch(err){
-        console.error('Fehler beim Löschen',err);
-        showNotification('Fehler beim Löschen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Nutzer: "Ich kann arbeiten!"
-       =================== */
-    async function confirmForEvent(eventId){
-      if(!loggedInUser){
-        showNotification('Bitte einloggen','error');
-        return;
-      }
-      try {
-        await updateDoc(doc(db,"events",eventId),{
-          mitarbeiter:arrayUnion(loggedInUser)
-        });
-        showNotification('Du hast dich angemeldet.');
-      }catch(err){
-        console.error('Fehler beim Bestätigen',err);
-        showNotification('Fehler: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Admin: Mitarbeiter entfernen
-       =================== */
-    async function removeName(eventId,name){
-      if(!canRemove)return;
-      try {
-        await updateDoc(doc(db,"events",eventId),{
-          mitarbeiter:arrayRemove(name)
-        });
-        showNotification('Name entfernt.','info');
-      }catch(err){
-        console.error('Fehler beim Entfernen',err);
-        showNotification('Fehler beim Entfernen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Auth
-       =================== */
-    onAuthStateChanged(auth,(user)=>{
-      if(user){
-        loggedInUser = user.displayName || user.email;
-        loggedInEmail = user.email;
-        canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
-        updateUIAfterLogin();
-        initializeAppData();
-      } else {
-        loggedInUser=null;
-        loggedInEmail=null;
-        canRemove=false;
-        updateUIAfterLogout();
-      }
-    });
-
-    /* ===================
-       Login / Register
-       =================== */
-    async function loginWithEmail(){
-      const emailVal = document.getElementById('emailInput').value.trim();
-      const pwVal = document.getElementById('passwordLogin').value;
-      const staySigned = document.getElementById('staySignedIn').checked;
-
-      if(!emailVal||!pwVal){
-        showNotification('Bitte E-Mail und Passwort eingeben','error');
-        return;
-      }
-      const pType = staySigned? browserLocalPersistence: browserSessionPersistence;
-      try{
-        await setPersistence(auth,pType);
-        const cred = await signInWithEmailAndPassword(auth,emailVal,pwVal);
-        const user= cred.user;
-        canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
-        loggedInUser = user.displayName || user.email;
-        showNotification(`${loggedInUser} ist eingeloggt.`,'success');
-      }catch(err){
-        console.error('Login Fehler',err);
-        showNotification('Login Fehler: '+err.message,'error');
-      }
-    }
-
-    // HIER: Dokument in "users" anlegen
+    async function loginWithEmail(){ ... }
     async function registerWithEmail(){
       const nameVal = document.getElementById('usernameRegister').value.trim();
       const emailVal= document.getElementById('emailRegister').value.trim();
       const pwVal   = document.getElementById('passwordRegister').value;
       if(!nameVal||!emailVal||!pwVal){
-        showNotification('Bitte Benutzername, E-Mail, Passwort eingeben.','error');
+        showNotification('Bitte Benutzername,E-Mail,Passwort.','error');
         return;
       }
-      try{
-        // 1) Nutzer in Auth anlegen
+      try {
         const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
-
-        // 2) Optional: Displayname setzen
-        await updateProfile(cred.user, { displayName: nameVal });
-
-        // 3) Dokument in "users" anlegen
+        await updateProfile(cred.user,{ displayName: nameVal });
+        // => Dokument in users anlegen
         await addDoc(collection(db,"users"), {
           email: emailVal,
           username: nameVal,
-          roles: [] // anfangs keine Rollen
+          roles:[]
         });
-
         showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
-      }catch(err){
-        console.error('Registrierung fehlgeschlagen',err);
-        showNotification('Registrierung fehlgeschlagen: '+err.message,'error');
+      } catch(err){
+        console.error('Reg Fehler',err);
+        showNotification('Reg Fehler: '+err.message,'error');
       }
     }
+    async function logout(){ ... }
 
-    async function logout(){
-      try{
-        await auth.signOut();
-        showNotification('Erfolgreich ausgeloggt','info');
-      }catch(err){
-        console.error('Logout Fehler',err);
-        showNotification('Logout Fehler: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       UI
-       =================== */
+    // UI
     function updateUIAfterLogin(){
       document.getElementById('authSection').style.display='none';
       document.getElementById('eventForm').style.display= canRemove ? 'block':'none';
@@ -761,48 +601,53 @@
       userLabel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
 
-      // Admin: "Mitarbeiter verwalten" 
+      // Admin
       if(canRemove){
+        document.getElementById('adminSection').style.display='block';
         document.getElementById('manageUsersBtn').style.display='inline-block';
+        // Admin => init Admin logic
+        initAdminSection();
       } else {
+        document.getElementById('adminSection').style.display='none';
         document.getElementById('manageUsersBtn').style.display='none';
+        // Normal user => Nur "Events" (listenToEvents?)
+        listenToEvents(); // Non-admin => wir wollen ev. Events aus DB ?
       }
     }
-    function updateUIAfterLogout(){
-      document.getElementById('authSection').style.display='block';
-      document.getElementById('eventForm').style.display='none';
-      document.getElementById('welcomeUser').style.display='none';
-      document.getElementById('logoutButton').style.display='none';
-      document.getElementById('adminSection').style.display='none';
+    function updateUIAfterLogout(){ ... }
 
-      document.getElementById('eventContainer').innerHTML='';
-    }
+    function toggleOtherEvent(){ ... }
 
-    function toggleOtherEvent(){
-      const val = document.getElementById('eventName').value;
-      document.getElementById('otherEventContainer').style.display= (val==='sonstige') ? 'block':'none';
-    }
+    // onAuthStateChanged
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        loggedInUser= user.displayName||user.email;
+        canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
+        updateUIAfterLogin();
+      } else {
+        loggedInUser=null;
+        canRemove=false;
+        updateUIAfterLogout();
+      }
+    });
 
-    /* ===================
-       Start
-       =================== */
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', ()=>{
       setCurrentDate();
 
-      document.getElementById('loginButton').addEventListener('click',loginWithEmail);
-      document.getElementById('registerButton').addEventListener('click',registerWithEmail);
-      document.getElementById('logoutButton').addEventListener('click',logout);
+      // Buttons
+      document.getElementById('loginButton').addEventListener('click', loginWithEmail);
+      document.getElementById('registerButton').addEventListener('click', registerWithEmail);
+      document.getElementById('logoutButton').addEventListener('click', logout);
 
-      // Admin: "Mitarbeiter verwalten"
-      document.getElementById('manageUsersBtn')?.addEventListener('click',()=>{
+      document.getElementById('manageUsersBtn').addEventListener('click', ()=>{
         window.location.href='adminUsers.html';
       });
     });
 
-    // Für Inline
+    // Inline
     window.removeEvent = removeEvent;
     window.removeName  = removeName;
-    window.confirmForEvent = confirmForEvent;
+    window.confirmForEvent= confirmForEvent;
     window.addEvent    = addEvent;
     window.toggleOtherEvent= toggleOtherEvent;
     window.exportCSV   = exportCSV;
