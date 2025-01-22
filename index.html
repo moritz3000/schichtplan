@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Kein Zoomen: mobile Web-App -->
+  <!-- Mobile optimiert, kein Zoomen -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Goethebunker Schichtplanung - Übersicht</title>
 
@@ -28,8 +28,8 @@
       font-family: var(--font-family);
       background-color: var(--background-color);
       color: #333;
-      padding-bottom: 60px;
       margin: 0;
+      padding-bottom: 60px; /* Platz fürs Footer-Fix */
     }
 
     header {
@@ -98,33 +98,6 @@
       color: var(--primary-color);
     }
 
-    .availability {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .name-item {
-      background-color: #e9ecef;
-      padding: 6px 10px;
-      border-radius: var(--border-radius);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.9em;
-      margin-bottom: 6px;
-    }
-    .name-item .remove {
-      background-color: var(--danger-color);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      font-size: 0.8em;
-      cursor: pointer;
-    }
-
     #adminSection {
       display: none;
       margin-top: 40px;
@@ -141,6 +114,7 @@
       padding: 12px;
       font-size: 1em;
       text-align: left;
+      vertical-align: top;
     }
     th {
       background-color: #f2f2f2;
@@ -174,8 +148,8 @@
       position: fixed;
       top: 10px;
       right: 10px;
-      z-index: 2000;
       max-width: 90%;
+      z-index: 2000;
     }
     .notification-message {
       background-color: #28a745;
@@ -194,11 +168,11 @@
     }
 
     @media (max-width: 768px) {
+      header {
+        font-size: 1.2em;
+      }
       .event {
         padding: 16px;
-      }
-      button {
-        font-size: 1em;
       }
     }
   </style>
@@ -214,7 +188,7 @@
   <div class="container">
     <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
 
-    <!-- Login/Register-Bereich -->
+    <!-- Auth-Bereich -->
     <div id="authSection">
       <h3>Einloggen</h3>
       <label for="emailInput">E-Mail:</label>
@@ -224,10 +198,9 @@
       <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
 
       <div style="margin-bottom:16px;">
-        <input type="checkbox" id="staySignedIn" />
+        <input type="checkbox" id="staySignedIn"/>
         <label for="staySignedIn" style="font-weight:normal;">Angemeldet bleiben</label>
       </div>
-
       <button id="loginButton">Einloggen</button>
       <hr />
 
@@ -244,8 +217,8 @@
       <button id="registerButton">Registrieren</button>
     </div>
 
-    <!-- Admin: Neues Event hinzufügen -->
-    <form id="eventForm" style="display: none;">
+    <!-- Admin: Neues Event -->
+    <form id="eventForm" style="display:none;">
       <h3>Neues Event hinzufügen</h3>
       <label for="eventName">Event Name:</label>
       <select id="eventName" onchange="toggleOtherEvent()">
@@ -262,25 +235,24 @@
 
       <div id="otherEventContainer" style="display:none;">
         <label for="otherEvent">Sonstiges Event:</label>
-        <input type="text" id="otherEvent" />
+        <input type="text" id="otherEvent"/>
       </div>
 
       <div style="display:flex; gap:20px;">
         <div style="flex:1;">
           <label for="eventDate">Datum:</label>
-          <input type="date" id="eventDate">
+          <input type="date" id="eventDate"/>
         </div>
         <div style="flex:1;">
           <label for="eventTime">Startzeit:</label>
-          <input type="time" id="eventTime">
+          <input type="time" id="eventTime"/>
         </div>
       </div>
-
       <button type="button" onclick="addEvent()">Event hinzufügen</button>
       <hr/>
     </form>
 
-    <!-- Event-Übersicht -->
+    <!-- Event-Liste -->
     <div id="eventContainer"></div>
 
     <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
@@ -291,6 +263,7 @@
           <tr>
             <th>Datum</th>
             <th>Event</th>
+            <!-- Pro Rolle eine Spalte -->
             <th>Theke</th>
             <th>Garderobe</th>
             <th>Tür</th>
@@ -301,7 +274,6 @@
         <tbody id="availabilityTable"></tbody>
       </table>
       <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
-      <!-- Admin: Link zu adminUsers.html -->
       <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
     </div>
   </div>
@@ -312,11 +284,15 @@
 
   <!-- Firebase + JS -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+    import { 
+      initializeApp 
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { 
+      getAnalytics 
+    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, deleteDoc,
-      query, where, arrayUnion, arrayRemove
+      getFirestore, collection, doc, onSnapshot, getDocs,
+      addDoc, updateDoc, deleteDoc, query, where, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
@@ -324,7 +300,7 @@
       createUserWithEmailAndPassword, updateProfile, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Deine Firebase-Konfiguration:
+    // Firebase-Konfiguration
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -342,33 +318,29 @@ const firebaseConfig = {
     let loggedInUser = null;
     let canRemove = false;
 
-    // ----------------------------
-    // ARRAYS + KONSTANTEN
-    // ----------------------------
+    // Globale Arrays
     let allUsers = [];
     let allEvents = [];
+
+    // Rollen => 5 Spalten
     const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
-    // ----------------------------
-    // NOTIFICATION
-    // ----------------------------
+    // Notifikation
     function showNotification(msg, type='success'){
-      const container= document.getElementById('notification');
+      const notif = document.getElementById('notification');
       const div= document.createElement('div');
       div.className='notification-message';
       if(type==='error') div.classList.add('notification-error');
       else if(type==='info') div.classList.add('notification-info');
       div.textContent= msg;
-      container.appendChild(div);
+      notif.appendChild(div);
       setTimeout(()=>{
         div.style.opacity='0';
         setTimeout(()=>div.remove(),500);
       },3000);
     }
 
-    // ----------------------------
-    // DATUM
-    // ----------------------------
+    // Datum
     function setCurrentDate(){
       const el= document.getElementById('currentDate');
       const d= new Date();
@@ -376,89 +348,141 @@ const firebaseConfig = {
       el.textContent= d.toLocaleDateString('de-DE', opts);
     }
 
-    // ----------------------------
-    // LOAD ALL USERS
-    // ----------------------------
+    /* --------------------------
+       LOAD ALL USERS
+    --------------------------- */
     async function loadAllUsers(){
       allUsers=[];
       const snap= await getDocs(collection(db,"users"));
       snap.forEach(docSnap=>{
         const data= docSnap.data();
-        // Spread ersetzen => Object.assign
+        // "Spread" ersetzen => Object.assign
         const combined= Object.assign({ id: docSnap.id }, data);
         allUsers.push(combined);
       });
-      console.log("[loadAllUsers]", allUsers.length, "Users gefunden.");
+      console.log("[loadAllUsers]", allUsers.length, "Benutzer");
     }
 
-    // ----------------------------
-    // HÖRE PER onSnapshot AUF EVENTS
-    // ----------------------------
+    /* --------------------------
+       LISTEN TO EVENTS
+    --------------------------- */
     function listenToEvents(){
-      onSnapshot(collection(db,"events"), (snapshot)=>{
+      onSnapshot(collection(db,"events"),(snapshot)=>{
         allEvents=[];
         snapshot.forEach(docSnap=>{
           const data= docSnap.data();
           const combined= Object.assign({id: docSnap.id}, data);
           allEvents.push(combined);
         });
-        console.log("[listenToEvents]", allEvents.length, "Events.");
-
-        // Admin-tabelle & normale Eventliste
+        console.log("[listenToEvents]", allEvents.length, "Events");
         renderAdminTable(allEvents, allUsers);
         renderEvents(allEvents);
       },(err)=>{
         console.error("Fehler events:", err);
-        showNotification("Fehler events: "+err.message,'error');
+        showNotification("Fehler events: "+ err.message, 'error');
       });
     }
 
-    // ----------------------------
-    // RENDER ADMIN TABELLE
-    // ----------------------------
+    /* --------------------------
+       ADMIN TABELLE
+    --------------------------- */
     function renderAdminTable(events, users){
       const tbody= document.getElementById("availabilityTable");
       tbody.innerHTML="";
 
       events.forEach(ev=>{
+        // Zeile
         const tr= document.createElement("tr");
+
+        // Datum
         const dObj= new Date(ev.datum);
         const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-
-        // (1) Datum
         const tdDate= document.createElement('td');
         tdDate.textContent= dStr;
         tr.appendChild(tdDate);
 
-        // (2) Event
+        // Event name
         const tdEvent= document.createElement('td');
         tdEvent.textContent= ev.name;
         tr.appendChild(tdEvent);
 
-        // (3..N) Spalten je Rolle
-        POSITIONS.forEach(pos=>{
-          const tdPos= document.createElement('td');
-          // Filter
-          const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            // passender user?
-            const userDoc= users.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
-            if(!userDoc) return false;
-            if(!Array.isArray(userDoc.roles)) return false;
-            return userDoc.roles.includes(pos);
-          });
-          if(matched.length){
-            tdPos.textContent= matched.join(", ");
+        // Pro Rolle -> Spalte
+        if(!ev.mitarbeiterByRole){
+          // Falls alt? -> init
+          ev.mitarbeiterByRole= {
+            Theke:[],
+            Garderobe:[],
+            Tür:[],
+            Kasse:[],
+            Schichtleitung:[]
+          };
+        }
+
+        POSITIONS.forEach(role=>{
+          const td= document.createElement('td');
+          
+          // 1) Liste der Emails in ev.mitarbeiterByRole[role] 
+          const emailsArr= ev.mitarbeiterByRole[role] || [];
+          if(emailsArr.length){
+            const p= document.createElement('p');
+            p.textContent= emailsArr.join(", ");
+            td.appendChild(p);
           }
-          tr.appendChild(tdPos);
+
+          // 2) Dropdown + Button -> nur Admin
+          if(canRemove){
+            // SELECT
+            const select= document.createElement('select');
+            const optEmpty= document.createElement('option');
+            optEmpty.value= "";
+            optEmpty.textContent= "-- Mitarbeiter wählen --";
+            select.appendChild(optEmpty);
+
+            users.forEach(u=>{
+              const opt= document.createElement('option');
+              opt.value= u.email;
+              opt.textContent= u.email; // oder u.displayName
+              select.appendChild(opt);
+            });
+            td.appendChild(select);
+
+            // Hinzufügen Button
+            const addBtn= document.createElement('button');
+            addBtn.textContent= "Hinzufügen";
+            addBtn.style.marginLeft="8px";
+            addBtn.onclick= ()=>{
+              const chosen= select.value;
+              if(!chosen)return;
+              addUserToRole(ev.id, role, chosen);
+            };
+            td.appendChild(addBtn);
+          }
+
+          tr.appendChild(td);
         });
 
         tbody.appendChild(tr);
       });
     }
 
-    // ----------------------------
-    // CSV EXPORT
-    // ----------------------------
+    // Admin: Nutzer zu Rolle hinzufügen
+    async function addUserToRole(eventId, role, email){
+      if(!canRemove)return;
+      try {
+        const ref= doc(db,"events",eventId);
+        const fieldPath= "mitarbeiterByRole."+role;
+        await updateDoc(ref, {
+          [fieldPath]: arrayUnion(email)
+        });
+        showNotification("Mitarbeiter "+email+" für "+role+" hinzugefügt.",'info');
+      } catch(err){
+        showNotification("Fehler addUserToRole: "+err.message,'error');
+      }
+    }
+
+    /* --------------------------
+       CSV EXPORT
+    --------------------------- */
     function exportCSV(){
       if(!canRemove){
         showNotification("Nur Admin kann CSV exportieren",'error');
@@ -468,100 +492,62 @@ const firebaseConfig = {
         showNotification("Keine Events zum Exportieren",'info');
         return;
       }
-      let csv= "Datum;Event;";
-      POSITIONS.forEach(pos=> csv+= pos+";");
-      csv+="\n";
-
+      let csv = "Datum;Event;Theke;Garderobe;Tür;Kasse;Schichtleitung\n";
       allEvents.forEach(ev=>{
         const dObj= new Date(ev.datum);
         const dd= String(dObj.getDate()).padStart(2,'0');
         const mm= String(dObj.getMonth()+1).padStart(2,'0');
         const yyyy= dObj.getFullYear();
         const dateStr= dd+"."+mm+"."+yyyy;
+        csv += dateStr+";"+ev.name+";";
 
-        csv+= dateStr+";"+ev.name+";";
-        // Spalten
-        POSITIONS.forEach(pos=>{
-          const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            const userDoc= allUsers.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
-            if(!userDoc)return false;
-            return (userDoc.roles||[]).includes(pos);
-          });
-          if(matched.length){
-            csv+= matched.join(",")+";";
+        // each role
+        POSITIONS.forEach(role=>{
+          const arr= ev.mitarbeiterByRole && ev.mitarbeiterByRole[role] ? ev.mitarbeiterByRole[role] : [];
+          if(arr.length){
+            csv+= arr.join(",")+";";
           } else {
             csv+=";";
           }
         });
         csv+="\n";
       });
-
-      // download
-      const blob= new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      // Download
+      const blob= new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const url= URL.createObjectURL(blob);
-      const a= document.createElement('a');
-      a.href= url;
-      a.setAttribute('download','verfuegbarkeiten.csv');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const link= document.createElement('a');
+      link.href= url;
+      link.setAttribute('download','verfuegbarkeiten.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
-    // ----------------------------
-    // EVENTS RENDERN (Mitarbeiter sieht nur sich selbst)
-    // ----------------------------
+    /* --------------------------
+       RENDER EVENTS (für nicht-Admin)
+    --------------------------- */
     function renderEvents(events){
       const container= document.getElementById('eventContainer');
-      container.innerHTML='';
-
+      container.innerHTML="";
       events.forEach(ev=>{
         const dObj= new Date(ev.datum);
         const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-
         const div= document.createElement('div');
         div.className='event';
-
-        div.innerHTML= `
+        div.innerHTML=`
           <h3>${ev.name}</h3>
           ${canRemove ? `<button class="remove-event" onclick="removeEvent('${ev.id}')">x</button>` : ''}
           <p><strong>${dStr}</strong> • Start: ${ev.startzeit||''} Uhr</p>
         `;
 
-        // availability
-        const availabilityDiv= document.createElement('div');
-        availabilityDiv.className='availability';
+        // Nur Info: Wer ist eingetragen (Rollen-basiert)
+        // => Nur Admin sieht das? Oder ALLE?
+        // Du kannst hier z.B. Theke: X, Y ...
+        // Wir lassen's weg - der Admin hat ja die Tabelle.
 
-        (ev.mitarbeiter||[]).forEach(name=>{
-          // Nur Admin sieht alle, Normaler Nutzer sieht nur name==loggedInUser
-          if(!canRemove && name.toLowerCase() !== (loggedInUser||"").toLowerCase()) {
-            return; 
-          }
-          // Erstellen
-          const nameSpan= document.createElement('span');
-          nameSpan.className='name-item';
-          nameSpan.textContent= name;
-          if(canRemove){
-            const btn= document.createElement('button');
-            btn.className='remove';
-            btn.textContent='x';
-            btn.onclick= ()=> removeName(ev.id,name);
-            nameSpan.appendChild(btn);
-          }
-          availabilityDiv.appendChild(nameSpan);
-        });
-        div.appendChild(availabilityDiv);
-
-        // "Ich kann arbeiten!" button
-        const confirmBtn= document.createElement('button');
-        confirmBtn.style.width='auto';
-        confirmBtn.style.display='inline-block';
-        confirmBtn.textContent="Ich kann arbeiten!";
-        confirmBtn.onclick= ()=> confirmForEvent(ev.id);
-        div.appendChild(confirmBtn);
-
-        // Link "Details" (statt Kommentare)
+        // Link "Details"
         const link= document.createElement('a');
-        link.textContent="Details"; 
+        link.textContent="Details";
         link.href=`eventDetails.html?id=${ev.id}`;
         link.style.position='absolute';
         link.style.bottom='10px';
@@ -575,107 +561,153 @@ const firebaseConfig = {
       });
     }
 
-    // ----------------------------
-    // FUNKTION: confirmForEvent => Bestätigungs-Dialog
-    // ----------------------------
-    async function confirmForEvent(eventId){
-      if(!loggedInUser){
-        showNotification("Bitte einloggen",'error');
+    // --------------------------
+    // ADMIN: Neues Event => init "mitarbeiterByRole"
+    // --------------------------
+    async function addEvent(){
+      if(!canRemove){
+        showNotification("Nur Admin kann Events anlegen",'error');
         return;
       }
-      // Abfrage
-      if(!confirm("Bitte bestätige, dass du arbeiten kannst.")) {
-        // User abgebrochen -> mach nichts
+      const eventNameVal = document.getElementById('eventName').value.trim();
+      if(!eventNameVal){
+        showNotification("Bitte Eventnamen angeben",'error');
         return;
       }
-      try {
-        const ref= doc(db,"events", eventId);
-        await updateDoc(ref, {
-          mitarbeiter: arrayUnion(loggedInUser)
-        });
-        showNotification("Du hast dich angemeldet.");
-      } catch(err){
-        console.error("Fehler beim Bestätigen", err);
-        showNotification("Fehler: "+ err.message,'error');
+      let finalName= eventNameVal;
+      if(eventNameVal==='sonstige'){
+        const otherVal= document.getElementById('otherEvent').value.trim();
+        if(!otherVal){
+          showNotification("Bitte sonstiges Event benennen",'error');
+          return;
+        }
+        finalName= otherVal;
       }
-    }
-
-    // ----------------------------
-    // removeName, removeEvent etc.
-    // ----------------------------
-    async function removeName(eventId, name){
-      if(!canRemove)return;
-      try {
-        const ref= doc(db,"events", eventId);
-        await updateDoc(ref, {
-          mitarbeiter: arrayRemove(name)
+      const eventDate= document.getElementById('eventDate').value;
+      const eventTime= document.getElementById('eventTime').value;
+      if(!eventDate || !eventTime){
+        showNotification("Bitte Datum und Uhrzeit wählen",'error');
+        return;
+      }
+      try{
+        const qy= query(collection(db,"events"),
+          where("datum","==",eventDate),
+          where("name","==",finalName),
+          where("startzeit","==",eventTime)
+        );
+        const snap= await getDocs(qy);
+        if(!snap.empty){
+          showNotification("Event existiert bereits",'error');
+          return;
+        }
+        await addDoc(collection(db,"events"),{
+          datum: eventDate,
+          name: finalName,
+          startzeit: eventTime,
+          // NEU: pro Rolle leeres array
+          mitarbeiterByRole: {
+            "Theke": [],
+            "Garderobe": [],
+            "Tür": [],
+            "Kasse": [],
+            "Schichtleitung": []
+          }
         });
-        showNotification("Name entfernt",'info');
+        showNotification("Event hinzugefügt");
+        document.getElementById('eventForm').reset();
+        document.getElementById('otherEventContainer').style.display='none';
       }catch(err){
-        showNotification("Fehler: "+err.message,'error');
+        console.error("Fehler addEvent:", err);
+        showNotification("Fehler addEvent: "+ err.message,'error');
       }
     }
 
+    // --------------------------
+    // removeEvent
+    // --------------------------
     async function removeEvent(eventId){
       if(!canRemove)return;
       if(!confirm("Möchtest du dieses Event löschen?")) return;
-      try {
-        await deleteDoc(doc(db,"events", eventId));
+      try{
+        await deleteDoc(doc(db,"events",eventId));
         showNotification("Event gelöscht",'info');
       }catch(err){
         showNotification("Fehler beim Löschen: "+err.message,'error');
       }
     }
 
-    // Admin: Neues Event
-    async function addEvent(){ 
-      // ...
-    }
-
-    // etc.
-
-    // ----------------------------
+    // --------------------------
     // ADMIN-INIT
-    // ----------------------------
+    // --------------------------
     async function initAdminSection(){
       await loadAllUsers();
       listenToEvents();
     }
 
-    // ----------------------------
+    // --------------------------
     // AUTH
-    // ----------------------------
-    async function loginWithEmail(){ /* dein Code */ }
+    // --------------------------
+    async function loginWithEmail(){
+      const emailVal= document.getElementById('emailInput').value.trim();
+      const pwVal   = document.getElementById('passwordLogin').value;
+      const stay    = document.getElementById('staySignedIn').checked;
+      if(!emailVal||!pwVal){
+        showNotification("Bitte E-Mail und Passwort eingeben",'error');
+        return;
+      }
+      const persist= stay? browserLocalPersistence: browserSessionPersistence;
+      try{
+        await setPersistence(auth, persist);
+        const cred= await signInWithEmailAndPassword(auth, emailVal, pwVal);
+        const user= cred.user;
+        canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
+        showNotification(user.email +" ist eingeloggt",'success');
+      }catch(err){
+        showNotification("Login Fehler: "+err.message,'error');
+      }
+    }
+
     async function registerWithEmail(){
-      const nameVal = document.getElementById('usernameRegister').value.trim();
+      const nameVal= document.getElementById('usernameRegister').value.trim();
       const emailVal= document.getElementById('emailRegister').value.trim();
       const pwVal   = document.getElementById('passwordRegister').value;
       if(!nameVal||!emailVal||!pwVal){
-        showNotification("Bitte Benutzername,E-Mail,Passwort",'error');
+        showNotification("Bitte Benutzername,E-Mail,Passwort eingeben",'error');
         return;
       }
       try{
         const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
         await updateProfile(cred.user,{ displayName: nameVal });
-        await addDoc(collection(db,"users"),{
+        // In "users" Collection => anlegen
+        await addDoc(collection(db,"users"), {
           email: emailVal,
           username: nameVal,
           roles:[]
         });
-        showNotification("Registrierung erfolgreich. Bitte einloggen",'success');
+        showNotification("Registrierung erfolgreich. Bitte einloggen.",'success');
       }catch(err){
         showNotification("Registrierung fehlgeschlagen: "+err.message,'error');
       }
     }
-    async function logout(){ /* ... */ }
 
+    async function logout(){
+      try{
+        await signOut(auth);
+        showNotification("Erfolgreich ausgeloggt",'info');
+      }catch(err){
+        showNotification("Logout Fehler: "+err.message,'error');
+      }
+    }
+
+    // --------------------------
     // UI
+    // --------------------------
     function updateUIAfterLogin(){
       document.getElementById('authSection').style.display='none';
       document.getElementById('eventForm').style.display= canRemove ? 'block':'none';
-      const userLabel= document.getElementById('welcomeUser');
-      userLabel.textContent='Willkommen, '+loggedInUser+'!';
-      userLabel.style.display='block';
+      const wel= document.getElementById('welcomeUser');
+      wel.textContent= "Willkommen, "+ (loggedInUser||"User") +"!";
+      wel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
 
       if(canRemove){
@@ -685,7 +717,8 @@ const firebaseConfig = {
       } else {
         document.getElementById('adminSection').style.display='none';
         document.getElementById('manageUsersBtn').style.display='none';
-        listenToEvents(); // Nur events, kein admin
+        // Normaler Nutzer => Nur Events
+        listenToEvents();
       }
     }
     function updateUIAfterLogout(){
@@ -698,14 +731,14 @@ const firebaseConfig = {
     }
 
     function toggleOtherEvent(){
-      const val = document.getElementById('eventName').value;
-      document.getElementById('otherEventContainer').style.display= (val==='sonstige') ? 'block':'none';
+      const val= document.getElementById('eventName').value;
+      document.getElementById('otherEventContainer').style.display= (val==='sonstige')?'block':'none';
     }
 
     // onAuthStateChanged
     onAuthStateChanged(auth, (user)=>{
       if(user){
-        loggedInUser= user.displayName||user.email;
+        loggedInUser= user.displayName|| user.email;
         canRemove= (user.email.toLowerCase()==='moritz@goethebunker.de');
         updateUIAfterLogin();
       } else {
@@ -717,7 +750,6 @@ const firebaseConfig = {
 
     document.addEventListener('DOMContentLoaded', ()=>{
       setCurrentDate();
-
       document.getElementById('loginButton').addEventListener('click', loginWithEmail);
       document.getElementById('registerButton').addEventListener('click', registerWithEmail);
       document.getElementById('logoutButton').addEventListener('click', logout);
@@ -728,12 +760,11 @@ const firebaseConfig = {
     });
 
     // Für Inline
-    window.removeEvent       = removeEvent;
-    window.removeName        = removeName;
-    window.confirmForEvent   = confirmForEvent;
     window.addEvent          = addEvent;
-    window.toggleOtherEvent  = toggleOtherEvent;
+    window.removeEvent       = removeEvent;
     window.exportCSV         = exportCSV;
+    window.toggleOtherEvent  = toggleOtherEvent;
+    window.addUserToRole     = addUserToRole; // Falls du inline aufrufen willst
   </script>
 </body>
 </html>
