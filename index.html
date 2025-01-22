@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
+  <!-- Kein Zoomen: mobile Web-App -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Goethebunker Schichtplanung - Übersicht</title>
 
   <style>
@@ -300,6 +301,7 @@
         <tbody id="availabilityTable"></tbody>
       </table>
       <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
+      <!-- Admin: Link zu adminUsers.html -->
       <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
     </div>
   </div>
@@ -313,8 +315,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
-      getFirestore, collection, doc, getDocs, onSnapshot, addDoc,
-      updateDoc, deleteDoc, query, where, arrayUnion, arrayRemove
+      getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, deleteDoc,
+      query, where, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
@@ -322,7 +324,7 @@
       createUserWithEmailAndPassword, updateProfile, signOut
     } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // =================== Firebase-Konfig ===================
+    // Deine Firebase-Konfiguration:
 const firebaseConfig = {
   apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
   authDomain: "schichtplan-5c70f.firebaseapp.com",
@@ -340,28 +342,33 @@ const firebaseConfig = {
     let loggedInUser = null;
     let canRemove = false;
 
-    // Arrays für Admin
+    // ----------------------------
+    // ARRAYS + KONSTANTEN
+    // ----------------------------
     let allUsers = [];
     let allEvents = [];
-
     const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
 
-    // ========== Benachrichtigungen ==========
+    // ----------------------------
+    // NOTIFICATION
+    // ----------------------------
     function showNotification(msg, type='success'){
-      const nBox= document.getElementById('notification');
+      const container= document.getElementById('notification');
       const div= document.createElement('div');
       div.className='notification-message';
       if(type==='error') div.classList.add('notification-error');
       else if(type==='info') div.classList.add('notification-info');
       div.textContent= msg;
-      nBox.appendChild(div);
+      container.appendChild(div);
       setTimeout(()=>{
         div.style.opacity='0';
         setTimeout(()=>div.remove(),500);
       },3000);
     }
 
-    // ========== Datum im Header ==========
+    // ----------------------------
+    // DATUM
+    // ----------------------------
     function setCurrentDate(){
       const el= document.getElementById('currentDate');
       const d= new Date();
@@ -369,68 +376,72 @@ const firebaseConfig = {
       el.textContent= d.toLocaleDateString('de-DE', opts);
     }
 
-    // ========== 1) Lade alle User ==========
+    // ----------------------------
+    // LOAD ALL USERS
+    // ----------------------------
     async function loadAllUsers(){
-      allUsers = [];
+      allUsers=[];
       const snap= await getDocs(collection(db,"users"));
       snap.forEach(docSnap=>{
-        // Ersetzen von {...docSnap.data(), id: docSnap.id} durch Object.assign
-        const docVal= docSnap.data();
-        const combined = Object.assign({ id: docSnap.id }, docVal);
+        const data= docSnap.data();
+        // Spread ersetzen => Object.assign
+        const combined= Object.assign({ id: docSnap.id }, data);
         allUsers.push(combined);
       });
-      console.log("[loadAllUsers]", allUsers.length, "users geladen");
+      console.log("[loadAllUsers]", allUsers.length, "Users gefunden.");
     }
 
-    // ========== 2) Höre per onSnapshot auf alle Events ==========
+    // ----------------------------
+    // HÖRE PER onSnapshot AUF EVENTS
+    // ----------------------------
     function listenToEvents(){
-      const collRef= collection(db,"events");
-      onSnapshot(collRef,(snapshot)=>{
-        allEvents= [];
+      onSnapshot(collection(db,"events"), (snapshot)=>{
+        allEvents=[];
         snapshot.forEach(docSnap=>{
-          // Ersetzen von {...docSnap.data(), id: docSnap.id} durch Object.assign
-          const docVal= docSnap.data();
-          const combined= Object.assign({ id: docSnap.id }, docVal);
+          const data= docSnap.data();
+          const combined= Object.assign({id: docSnap.id}, data);
           allEvents.push(combined);
         });
-        console.log("[listenToEvents] events:", allEvents.length);
+        console.log("[listenToEvents]", allEvents.length, "Events.");
 
-        // Admin-Tabelle & normale Event-Liste
+        // Admin-tabelle & normale Eventliste
         renderAdminTable(allEvents, allUsers);
         renderEvents(allEvents);
       },(err)=>{
-        console.error("Fehler beim Lesen der events:", err);
-        showNotification("Fehler beim Lesen der events: "+err.message,'error');
+        console.error("Fehler events:", err);
+        showNotification("Fehler events: "+err.message,'error');
       });
     }
 
-    // ========== 3) Admin-Tabelle rendern ==========
+    // ----------------------------
+    // RENDER ADMIN TABELLE
+    // ----------------------------
     function renderAdminTable(events, users){
       const tbody= document.getElementById("availabilityTable");
-      tbody.innerHTML= "";
+      tbody.innerHTML="";
 
       events.forEach(ev=>{
         const tr= document.createElement("tr");
-
-        // Datum
         const dObj= new Date(ev.datum);
-        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit', month:'2-digit', year:'numeric', weekday:'long'});
+        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+
+        // (1) Datum
         const tdDate= document.createElement('td');
         tdDate.textContent= dStr;
         tr.appendChild(tdDate);
 
-        // Event
+        // (2) Event
         const tdEvent= document.createElement('td');
         tdEvent.textContent= ev.name;
         tr.appendChild(tdEvent);
 
-        // Spalten pro Rolle
+        // (3..N) Spalten je Rolle
         POSITIONS.forEach(pos=>{
           const tdPos= document.createElement('td');
-          // Filter: ev.mitarbeiter includes mail -> userDoc in allUsers -> roles includes pos
+          // Filter
           const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            // find userDoc
-            const userDoc= users.find(u => (u.email||"").toLowerCase() === mail.toLowerCase());
+            // passender user?
+            const userDoc= users.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
             if(!userDoc) return false;
             if(!Array.isArray(userDoc.roles)) return false;
             return userDoc.roles.includes(pos);
@@ -445,7 +456,9 @@ const firebaseConfig = {
       });
     }
 
-    // ========== 4) CSV-Export ==========
+    // ----------------------------
+    // CSV EXPORT
+    // ----------------------------
     function exportCSV(){
       if(!canRemove){
         showNotification("Nur Admin kann CSV exportieren",'error');
@@ -455,26 +468,23 @@ const firebaseConfig = {
         showNotification("Keine Events zum Exportieren",'info');
         return;
       }
-      // CSV-Kopf
       let csv= "Datum;Event;";
       POSITIONS.forEach(pos=> csv+= pos+";");
       csv+="\n";
 
       allEvents.forEach(ev=>{
-        // Datum
         const dObj= new Date(ev.datum);
         const dd= String(dObj.getDate()).padStart(2,'0');
         const mm= String(dObj.getMonth()+1).padStart(2,'0');
         const yyyy= dObj.getFullYear();
         const dateStr= dd+"."+mm+"."+yyyy;
 
-        csv += dateStr+";"+ ev.name+";";
-
-        // Pro Rolle
+        csv+= dateStr+";"+ev.name+";";
+        // Spalten
         POSITIONS.forEach(pos=>{
           const matched= (ev.mitarbeiter||[]).filter(mail=>{
             const userDoc= allUsers.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
-            if(!userDoc) return false;
+            if(!userDoc)return false;
             return (userDoc.roles||[]).includes(pos);
           });
           if(matched.length){
@@ -486,27 +496,30 @@ const firebaseConfig = {
         csv+="\n";
       });
 
-      // Download
-      const blob= new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      // download
+      const blob= new Blob([csv], {type:'text/csv;charset=utf-8;'});
       const url= URL.createObjectURL(blob);
-      const link= document.createElement('a');
-      link.href= url;
-      link.setAttribute('download','verfuegbarkeiten.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a= document.createElement('a');
+      a.href= url;
+      a.setAttribute('download','verfuegbarkeiten.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
-    // ========== 5) Normale Event-Liste ==========
+    // ----------------------------
+    // EVENTS RENDERN (Mitarbeiter sieht nur sich selbst)
+    // ----------------------------
     function renderEvents(events){
       const container= document.getElementById('eventContainer');
-      container.innerHTML= "";
+      container.innerHTML='';
 
       events.forEach(ev=>{
-        const div= document.createElement('div');
-        div.className='event';
         const dObj= new Date(ev.datum);
         const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+
+        const div= document.createElement('div');
+        div.className='event';
 
         div.innerHTML= `
           <h3>${ev.name}</h3>
@@ -514,110 +527,165 @@ const firebaseConfig = {
           <p><strong>${dStr}</strong> • Start: ${ev.startzeit||''} Uhr</p>
         `;
 
+        // availability
         const availabilityDiv= document.createElement('div');
         availabilityDiv.className='availability';
+
         (ev.mitarbeiter||[]).forEach(name=>{
-          const sp= document.createElement('span');
-          sp.className='name-item';
-          sp.textContent= name;
-          if(canRemove){
-            const remBtn= document.createElement('button');
-            remBtn.className='remove';
-            remBtn.textContent='x';
-            remBtn.onclick=()=> removeName(ev.id,name);
-            sp.appendChild(remBtn);
+          // Nur Admin sieht alle, Normaler Nutzer sieht nur name==loggedInUser
+          if(!canRemove && name.toLowerCase() !== (loggedInUser||"").toLowerCase()) {
+            return; 
           }
-          availabilityDiv.appendChild(sp);
+          // Erstellen
+          const nameSpan= document.createElement('span');
+          nameSpan.className='name-item';
+          nameSpan.textContent= name;
+          if(canRemove){
+            const btn= document.createElement('button');
+            btn.className='remove';
+            btn.textContent='x';
+            btn.onclick= ()=> removeName(ev.id,name);
+            nameSpan.appendChild(btn);
+          }
+          availabilityDiv.appendChild(nameSpan);
         });
         div.appendChild(availabilityDiv);
 
-        // "Ich kann arbeiten!"
-        const btn= document.createElement('button');
-        btn.style.width='auto';
-        btn.style.display='inline-block';
-        btn.textContent="Ich kann arbeiten!";
-        btn.onclick= ()=> confirmForEvent(ev.id);
-        div.appendChild(btn);
+        // "Ich kann arbeiten!" button
+        const confirmBtn= document.createElement('button');
+        confirmBtn.style.width='auto';
+        confirmBtn.style.display='inline-block';
+        confirmBtn.textContent="Ich kann arbeiten!";
+        confirmBtn.onclick= ()=> confirmForEvent(ev.id);
+        div.appendChild(confirmBtn);
 
-        // Link "Kommentare"
-        const aLink= document.createElement('a');
-        aLink.textContent="Kommentare";
-        aLink.href=`eventDetails.html?id=${ev.id}`;
-        aLink.style.position='absolute';
-        aLink.style.bottom='10px';
-        aLink.style.right='10px';
-        aLink.style.fontSize='0.9em';
-        aLink.style.color='#007bff';
-        aLink.style.textDecoration='none';
+        // Link "Details" (statt Kommentare)
+        const link= document.createElement('a');
+        link.textContent="Details"; 
+        link.href=`eventDetails.html?id=${ev.id}`;
+        link.style.position='absolute';
+        link.style.bottom='10px';
+        link.style.right='10px';
+        link.style.fontSize='0.9em';
+        link.style.color='#007bff';
+        link.style.textDecoration='none';
+        div.appendChild(link);
 
-        div.appendChild(aLink);
         container.appendChild(div);
       });
     }
 
-    // ========== 6) Funktionen: Neues Event, entfernen, etc. ==========
+    // ----------------------------
+    // FUNKTION: confirmForEvent => Bestätigungs-Dialog
+    // ----------------------------
+    async function confirmForEvent(eventId){
+      if(!loggedInUser){
+        showNotification("Bitte einloggen",'error');
+        return;
+      }
+      // Abfrage
+      if(!confirm("Bitte bestätige, dass du arbeiten kannst.")) {
+        // User abgebrochen -> mach nichts
+        return;
+      }
+      try {
+        const ref= doc(db,"events", eventId);
+        await updateDoc(ref, {
+          mitarbeiter: arrayUnion(loggedInUser)
+        });
+        showNotification("Du hast dich angemeldet.");
+      } catch(err){
+        console.error("Fehler beim Bestätigen", err);
+        showNotification("Fehler: "+ err.message,'error');
+      }
+    }
 
-    async function addEvent(){ /* kein Spread benutzt */ }
-    async function removeEvent(eventId){ /* kein Spread */ }
-    async function confirmForEvent(eventId){ /* kein Spread */ }
-    async function removeName(eventId, name){ /* kein Spread */ }
+    // ----------------------------
+    // removeName, removeEvent etc.
+    // ----------------------------
+    async function removeName(eventId, name){
+      if(!canRemove)return;
+      try {
+        const ref= doc(db,"events", eventId);
+        await updateDoc(ref, {
+          mitarbeiter: arrayRemove(name)
+        });
+        showNotification("Name entfernt",'info');
+      }catch(err){
+        showNotification("Fehler: "+err.message,'error');
+      }
+    }
 
-    // ========== 7) Admin-Init (Lade alle Users, dann Events) ==========
+    async function removeEvent(eventId){
+      if(!canRemove)return;
+      if(!confirm("Möchtest du dieses Event löschen?")) return;
+      try {
+        await deleteDoc(doc(db,"events", eventId));
+        showNotification("Event gelöscht",'info');
+      }catch(err){
+        showNotification("Fehler beim Löschen: "+err.message,'error');
+      }
+    }
+
+    // Admin: Neues Event
+    async function addEvent(){ 
+      // ...
+    }
+
+    // etc.
+
+    // ----------------------------
+    // ADMIN-INIT
+    // ----------------------------
     async function initAdminSection(){
-      // 1) Lade user
       await loadAllUsers();
-      // 2) Höre per onSnapshot auf "events"
       listenToEvents();
     }
 
-    // ========== 8) Auth, Login, Register, UI ==========
-
-    async function loginWithEmail(){ /* kein Spread */ }
-    
+    // ----------------------------
+    // AUTH
+    // ----------------------------
+    async function loginWithEmail(){ /* dein Code */ }
     async function registerWithEmail(){
-      const nameVal= document.getElementById('usernameRegister').value.trim();
+      const nameVal = document.getElementById('usernameRegister').value.trim();
       const emailVal= document.getElementById('emailRegister').value.trim();
       const pwVal   = document.getElementById('passwordRegister').value;
       if(!nameVal||!emailVal||!pwVal){
-        showNotification('Bitte Benutzername,E-Mail,Passwort.','error');
+        showNotification("Bitte Benutzername,E-Mail,Passwort",'error');
         return;
       }
       try{
         const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
         await updateProfile(cred.user,{ displayName: nameVal });
-        // Dokument in "users" anlegen
-        await addDoc(collection(db,"users"), {
+        await addDoc(collection(db,"users"),{
           email: emailVal,
           username: nameVal,
           roles:[]
         });
-        showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
+        showNotification("Registrierung erfolgreich. Bitte einloggen",'success');
       }catch(err){
-        console.error("Reg Fehler:",err);
-        showNotification("Registrierung fehlgeschlagen: "+ err.message,'error');
+        showNotification("Registrierung fehlgeschlagen: "+err.message,'error');
       }
     }
+    async function logout(){ /* ... */ }
 
-    async function logout(){ /* kein Spread */ }
-
+    // UI
     function updateUIAfterLogin(){
       document.getElementById('authSection').style.display='none';
       document.getElementById('eventForm').style.display= canRemove ? 'block':'none';
       const userLabel= document.getElementById('welcomeUser');
-      userLabel.textContent= 'Willkommen, '+loggedInUser+'!';
+      userLabel.textContent='Willkommen, '+loggedInUser+'!';
       userLabel.style.display='block';
       document.getElementById('logoutButton').style.display='inline-block';
 
       if(canRemove){
         document.getElementById('adminSection').style.display='block';
         document.getElementById('manageUsersBtn').style.display='inline-block';
-        // Admin -> init
         initAdminSection();
       } else {
         document.getElementById('adminSection').style.display='none';
         document.getElementById('manageUsersBtn').style.display='none';
-        // Normaler Nutzer -> nur events?
-        listenToEvents(); 
+        listenToEvents(); // Nur events, kein admin
       }
     }
     function updateUIAfterLogout(){
@@ -629,8 +697,12 @@ const firebaseConfig = {
       document.getElementById('eventContainer').innerHTML='';
     }
 
-    function toggleOtherEvent(){ /* kein Spread */ }
+    function toggleOtherEvent(){
+      const val = document.getElementById('eventName').value;
+      document.getElementById('otherEventContainer').style.display= (val==='sonstige') ? 'block':'none';
+    }
 
+    // onAuthStateChanged
     onAuthStateChanged(auth, (user)=>{
       if(user){
         loggedInUser= user.displayName||user.email;
@@ -655,13 +727,13 @@ const firebaseConfig = {
       });
     });
 
-    // Inline
-    window.addEvent       = addEvent;
-    window.removeEvent    = removeEvent;
-    window.confirmForEvent= confirmForEvent;
-    window.removeName     = removeName;
-    window.toggleOtherEvent= toggleOtherEvent;
-    window.exportCSV      = exportCSV;
+    // Für Inline
+    window.removeEvent       = removeEvent;
+    window.removeName        = removeName;
+    window.confirmForEvent   = confirmForEvent;
+    window.addEvent          = addEvent;
+    window.toggleOtherEvent  = toggleOtherEvent;
+    window.exportCSV         = exportCSV;
   </script>
 </body>
 </html>
