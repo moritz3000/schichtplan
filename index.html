@@ -416,85 +416,166 @@ const firebaseConfig = {
     // ----------------------------
     // RENDER ADMIN TABELLE
     // ----------------------------
-    function renderAdminTable(events, users){
-      const tbody= document.getElementById("availabilityTable");
-      tbody.innerHTML="";
+function renderAdminTable(events, users) {
+  const tbody = document.getElementById('availabilityTable');
+  tbody.innerHTML = '';
 
-      events.forEach(ev=>{
-        const tr= document.createElement("tr");
-        const dObj= new Date(ev.datum);
-        const dStr= dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+  events.forEach(ev => {
+    // Neue Zeile pro Event
+    const tr = document.createElement('tr');
 
-        // (1) Datum
-        const tdDate= document.createElement('td');
-        tdDate.textContent= dStr;
-        tr.appendChild(tdDate);
+    // (1) Datum
+    const dObj = new Date(ev.datum);
+    const dStr = dObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
+    const tdDate = document.createElement('td');
+    tdDate.textContent = dStr;
+    tr.appendChild(tdDate);
 
-        // (2) Event
-        const tdEvent= document.createElement('td');
-        tdEvent.textContent= ev.name;
-        tr.appendChild(tdEvent);
+    // (2) Event-Name
+    const tdEvent = document.createElement('td');
+    tdEvent.textContent = ev.name;
+    tr.appendChild(tdEvent);
 
-        // (3..N) Spalten je Rolle
-        POSITIONS.forEach(pos=>{
-          const tdPos= document.createElement('td');
-          // Filter
-          const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            // passender user?
-            const userDoc= users.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
-            if(!userDoc) return false;
-            if(!Array.isArray(userDoc.roles)) return false;
-            return userDoc.roles.includes(pos);
-          });
-          if(matched.length){
-            tdPos.textContent= matched.join(", ");
-          }
-          tr.appendChild(tdPos);
+    // (3..) Spalten je Rolle
+    POSITIONS.forEach(role => {
+      const td = document.createElement('td');
+
+      // 3.1) Zeige, wer schon in ev.mitarbeiterByRole[role] ist
+      const namesArr = ev.mitarbeiterByRole && ev.mitarbeiterByRole[role] 
+                       ? ev.mitarbeiterByRole[role] 
+                       : [];
+      if (namesArr.length > 0) {
+        const listP = document.createElement('p');
+        listP.textContent = namesArr.join(", ");
+        td.appendChild(listP);
+      }
+
+      // 3.2) Wenn Admin: Dropdown + Button
+      if (canRemove) {
+        // Dropdown aller Users
+        const select = document.createElement('select');
+        // optional: leere Option
+        const optEmpty = document.createElement('option');
+        optEmpty.value = "";
+        optEmpty.textContent = "-- Mitarbeiter wählen --";
+        select.appendChild(optEmpty);
+
+        users.forEach(u => {
+          // Du kannst filtern, ob u ev. eine spezielle Rolle hat usw.
+          // Hier fügen wir alle ein:
+          const opt = document.createElement('option');
+          opt.value = u.email;
+          opt.textContent = u.email; // oder u.displayName
+          select.appendChild(opt);
         });
+        td.appendChild(select);
 
-        tbody.appendChild(tr);
-      });
-    }
+        // Hinzufügen-Button
+        const addBtn = document.createElement('button');
+        addBtn.textContent = "Hinzufügen";
+        addBtn.style.marginLeft = "8px";
+        addBtn.onclick = () => {
+          const chosenEmail = select.value;
+          if (!chosenEmail) return;
+          addUserToRole(ev.id, role, chosenEmail);
+        };
+        td.appendChild(addBtn);
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+async function addUserToRole(eventId, role, email) {
+  if(!canRemove) return;
+  try {
+    const ref = doc(db, "events", eventId);
+    // z.B. "mitarbeiterByRole.Theke"
+    const fieldPath = "mitarbeiterByRole." + role;
+    await updateDoc(ref, {
+      [fieldPath]: arrayUnion(email)
+    });
+    showNotification(`Mitarbeiter ${email} zur Rolle ${role} hinzugefügt.`,'info');
+  } catch(err) {
+    console.error("Fehler addUserToRole:", err);
+    showNotification("Fehler addUserToRole: "+err.message,'error');
+  }
+}
+
+async function addEvent() {
+  if(!canRemove){
+    showNotification('Nur Admin kann Events anlegen','error');
+    return;
+  }
+  const eventNameVal = document.getElementById('eventName').value.trim();
+  // ...
+  try {
+    await addDoc(collection(db,"events"), {
+      datum: eventDate,
+      name: eventNameVal,
+      startzeit: eventTime,
+      // NEU: init
+      mitarbeiterByRole: {
+        Theke: [],
+        Garderobe: [],
+        Tür: [],
+        Kasse: [],
+        Schichtleitung: []
+      },
+      // ...
+    });
+    showNotification("Event hinzugefügt");
+  } catch (err){
+    // ...
+  }
+}
+
 
     // ----------------------------
     // CSV EXPORT
     // ----------------------------
-    function exportCSV(){
-      if(!canRemove){
-        showNotification("Nur Admin kann CSV exportieren",'error');
-        return;
-      }
-      if(!allEvents.length){
-        showNotification("Keine Events zum Exportieren",'info');
-        return;
-      }
-      let csv= "Datum;Event;";
-      POSITIONS.forEach(pos=> csv+= pos+";");
-      csv+="\n";
+function exportCSV() {
+  if(!canRemove){
+    showNotification("Nur Admin kann CSV exportieren","error");
+    return;
+  }
+  if(!allEvents.length){
+    showNotification("Keine Events zum Exportieren","info");
+    return;
+  }
+  let csv = "Datum;Event;Theke;Garderobe;Tür;Kasse;Schichtleitung\n";
+  
+  allEvents.forEach(ev=>{
+    const dObj= new Date(ev.datum);
+    const dd= String(dObj.getDate()).padStart(2,'0');
+    const mm= String(dObj.getMonth()+1).padStart(2,'0');
+    const yyyy= dObj.getFullYear();
+    const dateStr= dd+"."+mm+"."+yyyy;
 
-      allEvents.forEach(ev=>{
-        const dObj= new Date(ev.datum);
-        const dd= String(dObj.getDate()).padStart(2,'0');
-        const mm= String(dObj.getMonth()+1).padStart(2,'0');
-        const yyyy= dObj.getFullYear();
-        const dateStr= dd+"."+mm+"."+yyyy;
+    csv+= dateStr + ";" + ev.name + ";";
 
-        csv+= dateStr+";"+ev.name+";";
-        // Spalten
-        POSITIONS.forEach(pos=>{
-          const matched= (ev.mitarbeiter||[]).filter(mail=>{
-            const userDoc= allUsers.find(u => (u.email||"").toLowerCase()=== mail.toLowerCase());
-            if(!userDoc)return false;
-            return (userDoc.roles||[]).includes(pos);
-          });
-          if(matched.length){
-            csv+= matched.join(",")+";";
-          } else {
-            csv+=";";
-          }
-        });
-        csv+="\n";
-      });
+    // Theke
+    const arrTheke= ev.mitarbeiterByRole && ev.mitarbeiterByRole.Theke ? ev.mitarbeiterByRole.Theke : [];
+    csv += arrTheke.join(",") + ";";
+
+    // Garderobe
+    const arrGard= ev.mitarbeiterByRole && ev.mitarbeiterByRole.Garderobe ? ev.mitarbeiterByRole.Garderobe : [];
+    csv += arrGard.join(",") + ";";
+
+    // Tür
+    const arrTuer= ev.mitarbeiterByRole && ev.mitarbeiterByRole.Tür ? ev.mitarbeiterByRole.Tür : [];
+    csv += arrTuer.join(",") + ";";
+
+    // Kasse
+    const arrKasse= ev.mitarbeiterByRole && ev.mitarbeiterByRole.Kasse ? ev.mitarbeiterByRole.Kasse : [];
+    csv += arrKasse.join(",") + ";";
+
+    // Schichtleitung
+    const arrSL= ev.mitarbeiterByRole && ev.mitarbeiterByRole.Schichtleitung ? ev.mitarbeiterByRole.Schichtleitung : [];
+    csv += arrSL.join(",") + "\n";
+  });
 
       // download
       const blob= new Blob([csv], {type:'text/csv;charset=utf-8;'});
@@ -658,9 +739,16 @@ const firebaseConfig = {
         const cred= await createUserWithEmailAndPassword(auth, emailVal, pwVal);
         await updateProfile(cred.user,{ displayName: nameVal });
         await addDoc(collection(db,"users"),{
-          email: emailVal,
-          username: nameVal,
-          roles:[]
+          datum: eventDate,
+  name: eventNameVal,
+  startzeit: eventTime,
+  // neu:
+  mitarbeiterByRole: {
+    Theke: [],
+    Garderobe: [],
+    Tür: [],
+    Kasse: [],
+    Schichtleitung: []
         });
         showNotification("Registrierung erfolgreich. Bitte einloggen",'success');
       }catch(err){
