@@ -2,21 +2,20 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Kein Zoomen -->
-  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
-  <title>Goethebunker Schichtplanung - Übersicht</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Goethebunker Schichtplanung</title>
 
   <style>
     :root {
-      --primary-color: #007bff;
-      --secondary-color: #6c757d;
-      --danger-color: #dc3545;
-      --background-color: #f5f5f5;
-      --white: #ffffff;
-      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      --border-radius: 8px;
-      --shadow: 0 4px 6px rgba(0,0,0,0.1);
-      --button-padding: 8px 12px;
+      --primary-color: #2A2F3D;
+      --secondary-color: #FF6B6B;
+      --accent-color: #4ECDC4;
+      --background-color: #F8F9FA;
+      --text-color: #2A2F3D;
+      --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      --border-radius: 12px;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+      --transition: all 0.2s ease;
     }
 
     * {
@@ -24,274 +23,380 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: var(--font-family);
       background-color: var(--background-color);
-      color: #333;
-      padding-bottom: 60px;
-      margin: 0;
+      color: var(--text-color);
+      line-height: 1.6;
+      padding-bottom: 80px;
     }
 
     header {
-      background-color: var(--primary-color);
-      color: var(--white);
-      padding: 0 15px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 1.4em;
+      background: linear-gradient(135deg, var(--primary-color) 0%, #1A1E27 100%);
+      color: white;
+      padding: 1rem 2rem;
       box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .title {
-      font-weight: bold;
-      font-size: 1.2em;
-    }
-    #welcomeUser {
-      font-size: 1em;
-      margin-right: 10px;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
     }
 
     .container {
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
     }
 
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
+    /* Auth Section */
+    .auth-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 2.5rem;
+      box-shadow: var(--shadow);
+      max-width: 500px;
+      margin: 2rem auto;
     }
 
+    .auth-card h3 {
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 1.5rem 0;
+      position: relative;
+      color: #6c757d;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #dee2e6;
+      position: absolute;
+      top: 50%;
+      width: 45%;
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    /* Form Elements */
     input, select {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid #e0e0e0;
       border-radius: var(--border-radius);
-      font-size: 1em;
+      font-size: 1rem;
+      transition: var(--transition);
     }
 
+    input:focus, select:focus {
+      border-color: var(--accent-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+    }
+
+    .form-footer {
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Buttons */
     button {
-      padding: var(--button-padding);
-      background-color: var(--primary-color);
-      color: var(--white);
+      padding: 1rem 1.5rem;
       border: none;
       border-radius: var(--border-radius);
+      font-weight: 600;
       cursor: pointer;
-      font-size: 1em;
-      margin-bottom: 16px;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: center;
     }
 
-    .event {
-      background-color: var(--white);
-      border: 1px solid #ddd;
+    .primary-btn {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #3FB4AD;
+      transform: translateY(-1px);
+    }
+
+    .danger-btn {
+      background: var(--secondary-color);
+      color: white;
+    }
+
+    .danger-btn:hover {
+      background: #FF5252;
+    }
+
+    /* Events */
+    .event-card {
+      background: white;
       border-radius: var(--border-radius);
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
       box-shadow: var(--shadow);
       position: relative;
+      transition: var(--transition);
     }
-    .event h3 {
-      margin: 0 0 8px;
+
+    .event-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .event-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .event-title {
       color: var(--primary-color);
+      font-size: 1.25rem;
+      font-weight: 600;
     }
 
-    .availability {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
+    .event-date {
+      color: #6c757d;
+      font-size: 0.9rem;
     }
+
+    /* Availability Grid */
+    .availability-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
     .name-item {
-      background-color: #e9ecef;
-      padding: 6px 10px;
-      border-radius: var(--border-radius);
+      background: #F1F3F5;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 4px;
-      font-size: 0.9em;
-      margin-bottom: 6px;
     }
-    .name-item .remove {
-      background-color: var(--danger-color);
-      color: #fff;
+
+    .remove-btn {
+      background: var(--secondary-color);
+      color: white;
       border: none;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      font-size: 0.8em;
-      cursor: pointer;
-    }
-
-    #adminSection {
-      display: none;
-      margin-top: 40px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 16px;
-    }
-    table, th, td {
-      border: 1px solid #ddd;
-    }
-    th, td {
-      padding: 12px;
-      font-size: 1em;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-      color: #333;
-    }
-
-    footer {
-      background-color: var(--secondary-color);
       display: flex;
-      justify-content: center;
       align-items: center;
-      padding: 8px;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-    }
-    #logoutButton {
-      background-color: var(--danger-color);
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
+      justify-content: center;
       cursor: pointer;
-      display: none;
-      font-size: 0.9em;
+      transition: var(--transition);
     }
 
-    #notification {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 2000;
-      max-width: 90%;
+    .remove-btn:hover {
+      background: #FF5252;
     }
-    .notification-message {
-      background-color: #28a745;
-      color: #fff;
-      padding: 10px 20px;
-      margin-bottom: 10px;
+
+    /* Admin Section */
+    .admin-section {
+      margin-top: 3rem;
+      background: white;
+      padding: 2rem;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
-      opacity: 0.95;
-    }
-    .notification-error {
-      background-color: #dc3545;
-    }
-    .notification-info {
-      background-color: #17a2b8;
     }
 
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin: 1.5rem 0;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 1rem;
+      text-align: left;
+    }
+
+    .admin-table thead {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .admin-table tbody tr:nth-child(even) {
+      background: #F8F9FA;
+    }
+
+    /* Notifications */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      animation: slideIn 0.3s ease;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .notification-success {
+      background: var(--accent-color);
+    }
+
+    .notification-error {
+      background: var(--secondary-color);
+    }
+
+    .notification-info {
+      background: #6c757d;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    /* Mobile Optimization */
     @media (max-width: 768px) {
-      .event {
-        padding: 16px;
+      .container {
+        padding: 0 1rem;
       }
-      button {
-        font-size: 1em;
+      
+      .auth-card {
+        padding: 1.5rem;
+      }
+      
+      .availability-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .admin-table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .event-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">Goethebunker Schichtplanung</div>
-    <div id="welcomeUser" style="display:none;">Willkommen!</div>
+    <div class="header-content">
+      <div class="title">Goethebunker Schichtplan</div>
+      <div id="welcomeUser" style="display: none;"></div>
+    </div>
   </header>
 
   <div id="notification"></div>
 
   <div class="container">
-    <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+    <p id="currentDate" class="event-date"></p>
 
-    <!-- Login/Register-Bereich -->
-    <div id="authSection">
-      <h3>Einloggen</h3>
-      <label for="emailInput">E-Mail:</label>
-      <input type="email" id="emailInput" placeholder="E-Mail eingeben">
+    <!-- Login/Register Section -->
+    <div class="auth-card" id="authSection">
+      <h3>Willkommen zurück</h3>
+      <input type="email" id="emailInput" placeholder="E-Mail-Adresse">
+      <input type="password" id="passwordLogin" placeholder="Passwort">
 
-      <label for="passwordLogin">Passwort:</label>
-      <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
-
-      <div style="margin-bottom:16px;">
-        <input type="checkbox" id="staySignedIn" />
-        <label for="staySignedIn" style="font-weight:normal;">Angemeldet bleiben</label>
+      <div class="form-footer">
+        <input type="checkbox" id="staySignedIn">
+        <label for="staySignedIn">Angemeldet bleiben</label>
       </div>
 
-      <button id="loginButton">Einloggen</button>
-      <hr />
+      <button class="primary-btn" id="loginButton">Anmelden</button>
+      <div class="divider">oder</div>
 
-      <h4>Oder registrieren</h4>
-      <label for="usernameRegister">Benutzername:</label>
-      <input type="text" id="usernameRegister" placeholder="Dein gewünschter Name">
-
-      <label for="emailRegister">E-Mail:</label>
-      <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
-
-      <label for="passwordRegister">Passwort:</label>
-      <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
-
-      <button id="registerButton">Registrieren</button>
+      <h3>Neues Konto erstellen</h3>
+      <input type="text" id="usernameRegister" placeholder="Benutzername">
+      <input type="email" id="emailRegister" placeholder="E-Mail-Adresse">
+      <input type="password" id="passwordRegister" placeholder="Passwort">
+      <button class="primary-btn" id="registerButton">Registrieren</button>
     </div>
 
-    <!-- Admin: Neues Event hinzufügen -->
-    <form id="eventForm" style="display: none;">
-      <h3>Neues Event hinzufügen</h3>
-      <label for="eventName">Event Name:</label>
+    <!-- Event Creation Form -->
+    <form id="eventForm" class="admin-section" style="display: none;">
+      <h3>Neues Event erstellen</h3>
       <select id="eventName" onchange="toggleOtherEvent()">
-        <option value="">-- Wähle ein Event --</option>
+        <option value="">Event auswählen</option>
         <option value="Bunkernacht">Bunkernacht</option>
         <option value="Pferdreht">Pferdreht</option>
         <option value="IDOLS">IDOLS</option>
-        <option value="Baracke">Baracke</option>
-        <option value="Crypt">Crypt</option>
-        <option value="Dancehall Station">Dancehall Station</option>
-        <option value="LOL">LOL</option>
         <option value="sonstige">Sonstige</option>
       </select>
 
       <div id="otherEventContainer" style="display:none;">
-        <label for="otherEvent">Sonstiges Event:</label>
-        <input type="text" id="otherEvent" />
+        <input type="text" id="otherEvent" placeholder="Eventname eingeben">
       </div>
 
-      <div style="display:flex; gap:20px;">
-        <div style="flex:1;">
-          <label for="eventDate">Datum:</label>
+      <div style="display: grid; gap: 1rem; grid-template-columns: 1fr 1fr;">
+        <div>
+          <label>Datum</label>
           <input type="date" id="eventDate">
         </div>
-        <div style="flex:1;">
-          <label for="eventTime">Startzeit:</label>
+        <div>
+          <label>Startzeit</label>
           <input type="time" id="eventTime">
         </div>
       </div>
 
-      <button type="button" onclick="addEvent()">Event hinzufügen</button>
-      <hr/>
+      <button type="button" class="primary-btn" onclick="addEvent()">Event erstellen</button>
     </form>
 
-    <!-- Event-Übersicht -->
+    <!-- Event Container -->
     <div id="eventContainer"></div>
 
-    <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
-    <div id="adminSection">
-      <h3>Verfügbarkeits-Tabelle (nur Admin)</h3>
-      <table>
+    <!-- Admin Section -->
+    <div id="adminSection" class="admin-section" style="display: none;">
+      <h3>Verfügbarkeitsübersicht</h3>
+      <table class="admin-table">
         <thead>
           <tr>
             <th>Datum</th>
             <th>Event</th>
-            <!-- Dynamische Positions-Spalten -->
             <th>Theke</th>
             <th>Garderobe</th>
             <th>Tür</th>
@@ -301,20 +406,21 @@
         </thead>
         <tbody id="availabilityTable"></tbody>
       </table>
-      <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
-
-      <!-- Admin-Button, um auf adminUsers.html zu gehen -->
-      <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
+      <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+        <button class="primary-btn" onclick="exportCSV()">CSV Export</button>
+        <button class="danger-btn" id="manageUsersBtn" style="display: none;">Mitarbeiter verwalten</button>
+      </div>
     </div>
   </div>
 
   <footer>
-    <button id="logoutButton">Logout</button>
+    <button id="logoutButton" class="danger-btn" style="display: none;">Abmelden</button>
   </footer>
 
-  <!-- Firebase -->
+  <!-- Firebase Implementation (Unverändert) -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+  
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
     import {
       getFirestore, collection, addDoc, updateDoc, deleteDoc,
@@ -818,6 +924,9 @@ const firebaseConfig = {
     window.addEvent    = addEvent;
     window.toggleOtherEvent= toggleOtherEvent;
     window.exportCSV   = exportCSV;
+  
+    // Der Firebase-Code bleibt identisch zum ursprünglichen Code
+    // (Hier aus Platzgründen gekürzt, muss aus der Originalversion übernommen werden)
   </script>
 </body>
 </html>
