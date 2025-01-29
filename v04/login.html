@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta 
+    name="viewport" 
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Bunker Schichten - Login</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Bunker Schichten</h1>
+    </header>
+    
+    <section class="mt-16">
+      <h2 class="text-center">Anmelden</h2>
+      
+      <div class="input-group">
+        <input type="email" id="emailInput" class="input-field" placeholder="E-Mail">
+      </div>
+      <div class="input-group">
+        <input type="password" id="passwordLogin" class="input-field" placeholder="Passwort">
+      </div>
+      <button class="btn" id="loginButton">Anmelden</button>
+    </section>
+  </div>
+
+  <!-- Sticky Footer Navigation -->
+  <nav class="bottom-nav">
+    <a href="/login.html" class="nav-item active">
+      <span>Login</span>
+    </a>
+    <a href="/register.html" class="nav-item">
+      <span>Registrieren</span>
+    </a>
+    <a href="/home.html" class="nav-item">
+      <span>Home</span>
+    </a>
+    <a href="/kalender.html" class="nav-item">
+      <span>Kalender</span>
+    </a>
+    <a href="/schichtleitung.html" class="nav-item">
+      <span>Schichtleitung</span>
+    </a>
+    <a href="/details.html" class="nav-item">
+      <span>Details</span>
+    </a>
+    <a href="/admin.html" class="nav-item">
+      <span>Admin</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { loginUser } from '/js/firebaseConfig.js';
+    import { showNotification } from '/js/main.js';
+
+    document.getElementById('loginButton').addEventListener('click', async () => {
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passwordLogin').value;
+
+      try {
+        await loginUser(email, password);
+        showNotification('Erfolgreich eingeloggt');
+        // Weiterleitung z.B. auf Home
+        window.location.href = '/home.html';
+      } catch (error) {
+        showNotification('Fehler: ' + error.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

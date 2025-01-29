@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta 
+    name="viewport" 
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Bunker Schichten - Index</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Willkommen bei Bunker Schichten</h1>
+    </header>
+
+    <section style="margin-top: 16px;">
+      <p>Dies ist die Startseite. Klicke unten auf "Login" um dich anzumelden.</p>
+    </section>
+  </div>
+
+  <!-- Sticky Footer Navigation -->
+  <nav class="bottom-nav">
+    <a href="/login.html" class="nav-item">
+      <span>Login</span>
+    </a>
+    <a href="/register.html" class="nav-item">
+      <span>Registrieren</span>
+    </a>
+    <a href="/home.html" class="nav-item">
+      <span>Home</span>
+    </a>
+    <a href="/kalender.html" class="nav-item">
+      <span>Kalender</span>
+    </a>
+    <a href="/schichtleitung.html" class="nav-item">
+      <span>Schichtleitung</span>
+    </a>
+    <a href="/details.html" class="nav-item">
+      <span>Details</span>
+    </a>
+    <a href="/admin.html" class="nav-item">
+      <span>Admin</span>
+    </a>
+  </nav>
+
+  <script type="module">
+    import { showNotification } from '/js/main.js';
+    // Du könntest hier z.B. eine Weiterleitung direkt auf login.html machen
+    // location.replace('/login.html');
+  </script>
+</body>
+</html>
