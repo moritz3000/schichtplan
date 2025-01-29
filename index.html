@@ -3,817 +3,406 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Bunker Schichten</title>
+    <link rel="manifest" href="/manifest.json">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --error: #ef4444;
-            --text: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #6c757d;
+      --danger-color: #dc3545;
+      --background-color: #f5f5f5;
+      --white: #ffffff;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --button-padding: 8px 12px;
+    }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--background-color);
+      color: #333;
+      padding-bottom: 60px;
+      margin: 0;
+    }
 
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--background);
-            color: var(--text);
-            touch-action: manipulation;
-        }
+    header {
+      background-color: var(--primary-color);
+      color: var(--white);
+      padding: 0 15px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.4em;
+      box-shadow: var(--shadow);
+    }
+    .title {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    #welcomeUser {
+      font-size: 1em;
+      margin-right: 10px;
+    }
 
-        /* App Container */
-        .app-container {
-            max-width: 100%;
-            min-height: 100vh;
-            padding: 0 16px 80px;
-        }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
 
-        /* Header */
-        .app-header {
-            position: sticky;
-            top: 0;
-            background: var(--surface);
-            padding: 16px;
-            box-shadow: var(--shadow);
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
 
-        .app-header h1 {
-            font-size: 1.25rem;
-            margin: 0;
-            color: var(--primary);
-        }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
+      font-size: 1em;
+    }
 
-        /* Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--surface);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-        }
+    button {
+      padding: var(--button-padding);
+      background-color: var(--primary-color);
+      color: var(--white);
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1em;
+      margin-bottom: 16px;
+    }
 
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.75rem;
-        }
+    .event {
+      background-color: var(--white);
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .event h3 {
+      margin: 0 0 8px;
+      color: var(--primary-color);
+    }
 
-        .nav-item.active {
-            color: var(--primary);
-        }
+    .availability {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .name-item {
+      background-color: #e9ecef;
+      padding: 6px 10px;
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.9em;
+      margin-bottom: 6px;
+    }
+    .name-item .remove {
+      background-color: var(--danger-color);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
 
-        /* Form Elements */
-        .input-group {
-            margin-bottom: 16px;
-        }
+    #adminSection {
+      display: none;
+      margin-top: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 12px;
+      font-size: 1em;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
 
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
+    footer {
+      background-color: var(--secondary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+    }
+    #logoutButton {
+      background-color: var(--danger-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: none;
+      font-size: 0.9em;
+    }
 
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            background: var(--surface);
-            transition: border-color 0.2s;
-        }
+    #notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 2000;
+      max-width: 90%;
+    }
+    .notification-message {
+      background-color: #28a745;
+      color: #fff;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      opacity: 0.95;
+    }
+    .notification-error {
+      background-color: #dc3545;
+    }
+    .notification-info {
+      background-color: #17a2b8;
+    }
 
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Buttons */
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            background: var(--primary);
-            color: white;
-            font-weight: 500;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn:active {
-            background: var(--primary-dark);
-            transform: scale(0.98);
-        }
-
-        /* Event Cards */
-        .event-card {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow);
-        }
-
-        .event-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .event-title {
-            font-weight: 600;
-            color: var(--text);
-            font-size: 1rem;
-        }
-
-        .event-date {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-
-        /* Availability Chips */
-        .availability-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .chip {
-            background: var(--background);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .chip-remove {
-            background: none;
-            border: none;
-            color: var(--error);
-            padding: 0;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* Admin Elements */
-        .admin-section {
-            margin-top: 24px;
-            padding: 16px;
-            background: var(--surface);
-            border-radius: 12px;
-        }
-
-        /* Utility Classes */
-        .hidden {
-            display: none !important;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .mt-16 {
-            margin-top: 16px;
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--primary);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 20px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
+    @media (max-width: 768px) {
+      .event {
+        padding: 16px;
+      }
+      button {
+        font-size: 1em;
+      }
+    }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <h1>Bunker Schichten</h1>
-            <div id="welcomeUser" class="hidden"></div>
-        </header>
+<header>
+    <div class="title">Goethebunker Schichtplanung</div>
+    <div id="welcomeUser" style="display:none;">Willkommen!</div>
+  </header>
 
-        <div id="notification"></div>
+  <div id="notification"></div>
 
-        <!-- Auth Section -->
-        <section id="authSection" class="mt-16">
-            <h2 class="text-center">Anmelden</h2>
-            <div class="input-group">
-                <input type="email" id="emailInput" class="input-field" placeholder="E-Mail">
-            </div>
-            <div class="input-group">
-                <input type="password" id="passwordLogin" class="input-field" placeholder="Passwort">
-            </div>
-            <button class="btn" id="loginButton">Anmelden</button>
+  <div class="container">
+    <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
 
-            <div class="text-center mt-16">
-                <h3>Neuer Benutzer?</h3>
-                <div class="input-group">
-                    <input type="text" id="usernameRegister" class="input-field" placeholder="Benutzername">
-                </div>
-                <div class="input-group">
-                    <input type="email" id="emailRegister" class="input-field" placeholder="E-Mail">
-                </div>
-                <div class="input-group">
-                    <input type="password" id="passwordRegister" class="input-field" placeholder="Passwort">
-                </div>
-                <button class="btn" id="registerButton">Registrieren</button>
-            </div>
-        </section>
+    <!-- Login/Register-Bereich -->
+    <div id="authSection">
+      <h3>Einloggen</h3>
+      <label for="emailInput">E-Mail:</label>
+      <input type="email" id="emailInput" placeholder="E-Mail eingeben">
 
-        <!-- Event Management -->
-        <section id="eventContainer" class="hidden"></section>
+      <label for="passwordLogin">Passwort:</label>
+      <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
 
-        <!-- Admin Section -->
-        <section id="adminSection" class="admin-section hidden">
-            <h2>Schichtplan</h2>
-            <div class="input-group">
-                <select id="eventName" class="input-field">
-                    <option value="">Event auswählen</option>
-                    <option>Bunkernacht</option>
-                    <option>Pferdreht</option>
-                    <option>IDOLS</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <input type="date" id="eventDate" class="input-field">
-            </div>
-            <button class="btn" onclick="addEvent()">Event erstellen</button>
-        </section>
+      <div style="margin-bottom:16px;">
+        <input type="checkbox" id="staySignedIn" />
+        <label for="staySignedIn" style="font-weight:normal;">Angemeldet bleiben</label>
+      </div>
+
+      <button id="loginButton">Einloggen</button>
+      <hr />
+
+      <h4>Oder registrieren</h4>
+      <label for="usernameRegister">Benutzername:</label>
+      <input type="text" id="usernameRegister" placeholder="Dein gewünschter Name">
+
+      <label for="emailRegister">E-Mail:</label>
+      <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
+
+      <label for="passwordRegister">Passwort:</label>
+      <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
+
+      <button id="registerButton">Registrieren</button>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="#" class="nav-item active">
-            <span>Schichten</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span>Kalender</span>
-        </a>
-        <a href="#" class="nav-item">
-            <span>Profil</span>
-        </a>
-    </nav>
+    <!-- Admin: Neues Event hinzufügen -->
+    <form id="eventForm" style="display: none;">
+      <h3>Neues Event hinzufügen</h3>
+      <label for="eventName">Event Name:</label>
+      <select id="eventName" onchange="toggleOtherEvent()">
+        <option value="">-- Wähle ein Event --</option>
+        <option value="Bunkernacht">Bunkernacht</option>
+        <option value="Pferdreht">Pferdreht</option>
+        <option value="IDOLS">IDOLS</option>
+        <option value="Baracke">Baracke</option>
+        <option value="Crypt">Crypt</option>
+        <option value="Dancehall Station">Dancehall Station</option>
+        <option value="LOL">LOL</option>
+        <option value="sonstige">Sonstige</option>
+      </select>
 
-    <script>
-        // Zooming deaktivieren
-        document.addEventListener('gesturestart', function(e) {
-            e.preventDefault();
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if(e.scale !== 1) e.preventDefault();
-        }, { passive: false });
-    </script>
+      <div id="otherEventContainer" style="display:none;">
+        <label for="otherEvent">Sonstiges Event:</label>
+        <input type="text" id="otherEvent" />
+      </div>
 
-    <!-- Firebase Code (wie zuvor) -->
+      <div style="display:flex; gap:20px;">
+        <div style="flex:1;">
+          <label for="eventDate">Datum:</label>
+          <input type="date" id="eventDate">
+        </div>
+        <div style="flex:1;">
+          <label for="eventTime">Startzeit:</label>
+          <input type="time" id="eventTime">
+        </div>
+      </div>
+
+      <button type="button" onclick="addEvent()">Event hinzufügen</button>
+      <hr/>
+    </form>
+
+    <!-- Event-Übersicht -->
+    <div id="eventContainer"></div>
+
+    <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
+    <div id="adminSection">
+      <h3>Verfügbarkeits-Tabelle (nur Admin)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Event</th>
+            <!-- Dynamische Positions-Spalten -->
+            <th>Theke</th>
+            <th>Garderobe</th>
+            <th>Tür</th>
+            <th>Kasse</th>
+            <th>Schichtleitung</th>
+          </tr>
+        </thead>
+        <tbody id="availabilityTable"></tbody>
+      </table>
+      <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
+
+      <!-- Admin-Button, um auf adminUsers.html zu gehen -->
+      <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
+    </div>
+  </div>
+
+  <footer>
+    <button id="logoutButton">Logout</button>
+  </footer>
+
+
     <script type="module">
-	
-	
-	    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-    import {
-      getFirestore, collection, addDoc, updateDoc, deleteDoc,
-      doc, onSnapshot, query, where, arrayUnion, arrayRemove, getDocs
-    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-    import {
-      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      onAuthStateChanged, updateProfile, setPersistence,
-      browserLocalPersistence, browserSessionPersistence
-    } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    /* ===================
-       Firebase-Konfig 
-       =================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
-  authDomain: "schichtplan-5c70f.firebaseapp.com",
-  projectId: "schichtplan-5c70f",
-  storageBucket: "schichtplan-5c70f.firebasestorage.app",
-  messagingSenderId: "502149312331",
-  appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
-  measurementId: "G-0DL0R5B7LV"
-};
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+        // Firebase Konfiguration
+        const firebaseConfig = {
+            apiKey: "DEINE_API_KEY",
+            authDomain: "DEIN_PROJEKT.firebaseapp.com",
+            projectId: "DEIN_PROJEKT",
+            storageBucket: "DEIN_PROJEKT.appspot.com",
+            messagingSenderId: "DEINE_SENDER_ID",
+            appId: "DEINE_APP_ID"
+        };
 
-    let loggedInUser = null;
-    let loggedInEmail = null;
-    let canRemove = false;
-    let allEventsData = [];
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    // Damit wir die Rollen der User kennen, um sie in CSV zuzuordnen
-    let userRolesMap = {}; // email -> array of roles
-
-    // Positions
-    const POSITIONS = ["Theke","Garderobe","Tür","Kasse","Schichtleitung"];
-
-    function setCurrentDate() {
-      const el = document.getElementById('currentDate');
-      const d = new Date();
-      const opts = { day:'2-digit', month:'2-digit', year:'numeric', weekday:'long' };
-      el.textContent = d.toLocaleDateString('de-DE', opts);
-    }
-
-    function showNotification(msg,type='success') {
-      const notiBox = document.getElementById('notification');
-      const div = document.createElement('div');
-      div.className = 'notification-message';
-      if(type==='error') div.classList.add('notification-error');
-      else if(type==='info') div.classList.add('notification-info');
-      div.textContent = msg;
-      notiBox.appendChild(div);
-      setTimeout(()=>{
-        div.style.opacity='0';
-        setTimeout(()=>div.remove(),500);
-      },3000);
-    }
-
-    /* ===================
-       Events rendern
-       =================== */
-    function renderEvents(data) {
-      const container = document.getElementById('eventContainer');
-      container.innerHTML = '';
-
-      data.forEach(ev => {
-        const div = document.createElement('div');
-        div.className='event';
-
-        const dateObj = new Date(ev.datum);
-        const dateStr = dateObj.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'}) || '';
-
-        div.innerHTML=`
-          <h3>${ev.name}</h3>
-          ${canRemove ? `<button class="remove-event" onclick="removeEvent('${ev.id}')">x</button>` : ''}
-          <p><strong>${dateStr}</strong> • Start: ${ev.startzeit || ''} Uhr</p>
-        `;
-
-        // Mitarbeiter
-        const availabilityDiv = document.createElement('div');
-        availabilityDiv.className='availability';
-        (ev.mitarbeiter||[]).forEach(name=>{
-          const nameSpan = document.createElement('span');
-          nameSpan.className='name-item';
-          nameSpan.textContent=name;
-          if(canRemove){
-            const remBtn = document.createElement('button');
-            remBtn.className='remove';
-            remBtn.textContent='x';
-            remBtn.onclick=()=> removeName(ev.id,name);
-            nameSpan.appendChild(remBtn);
-          }
-          availabilityDiv.appendChild(nameSpan);
-        });
-        div.appendChild(availabilityDiv);
-
-        // Button "Ich kann arbeiten!"
-        const confirmBtn = document.createElement('button');
-        confirmBtn.style.width='auto';
-        confirmBtn.style.display='inline-block';
-        confirmBtn.textContent="Ich kann arbeiten!";
-        confirmBtn.onclick=()=> confirmForEvent(ev.id);
-        div.appendChild(confirmBtn);
-
-        // Link "Kommentare" -> details-Seite
-        const commentsLink = document.createElement('a');
-        commentsLink.textContent="Kommentare";
-        commentsLink.href=`eventDetails.html?id=${ev.id}`;
-        commentsLink.style.position='absolute';
-        commentsLink.style.bottom='10px';
-        commentsLink.style.right='10px';
-        commentsLink.style.fontSize='0.9em';
-        commentsLink.style.color='#007bff';
-        commentsLink.style.textDecoration='none';
-
-        div.appendChild(commentsLink);
-        container.appendChild(div);
-      });
-    }
-
-    /* ===================
-       Admin-Tabelle
-       =================== */
-    function renderAdminTable(data){
-      const tbody = document.getElementById('availabilityTable');
-      tbody.innerHTML='';
-
-      data.forEach(ev=>{
-        // Format Datum
-        const dStr = new Date(ev.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',weekday:'long'});
-        const tr = document.createElement('tr');
-
-        // (1) Datum
-        const tdDate = document.createElement('td');
-        tdDate.textContent=dStr;
-        tr.appendChild(tdDate);
-
-        // (2) Event
-        const tdName = document.createElement('td');
-        tdName.textContent= ev.name;
-        tr.appendChild(tdName);
-
-        // Dann pro Position eine Spalte
-        POSITIONS.forEach(pos=>{
-          const tdPos = document.createElement('td');
-          // Filtere alle, die in ev.mitarbeiter enthalten sind und in userRolesMap die Rolle pos haben
-          const matched = (ev.mitarbeiter||[]).filter(email=>{
-            const roles= userRolesMap[email]||[];
-            return roles.includes(pos);
-          });
-          if(matched.length>0){
-            tdPos.textContent= matched.join(", ");
-          } 
-          tr.appendChild(tdPos);
-        });
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    /* ===================
-       CSV-Export
-       =================== */
-    async function exportCSV(){
-      if(!canRemove){
-        showNotification('Nur Admin kann CSV exportieren','error');
-        return;
-      }
-      if(!allEventsData.length){
-        showNotification('Keine Events zum Exportieren','info');
-        return;
-      }
-      try {
-        // Lade alle User, baue rolesMap
-        await loadAllUsersRoles();
-
-        let csv="Datum;Event;";
-        // Kopfzeile: Theke, Garderobe, Tür, Kasse, Schichtleitung
-        POSITIONS.forEach(pos=>{
-          csv+= pos+";";
-        });
-        csv+="\n";
-
-        // Zeilen pro Event
-        allEventsData.forEach(ev=>{
-          // Datum
-          const dObj= new Date(ev.datum);
-          const dd= String(dObj.getDate()).padStart(2,'0');
-          const mm= String(dObj.getMonth()+1).padStart(2,'0');
-          const yy= dObj.getFullYear(); 
-          const dateStr= `${dd}.${mm}.${yy}`;
-          csv+= dateStr+";"+ ev.name+";";
-
-          // Für jede Position => sammle die employees
-          POSITIONS.forEach(pos=>{
-            const matched= (ev.mitarbeiter||[]).filter(mail=>{
-              const roles= userRolesMap[mail]||[];
-              return roles.includes(pos);
-            });
-            if(matched.length){
-              csv+= matched.join(",")+";";
-            } else {
-              csv+=";";
+        // Login Funktion
+        async function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordLogin').value;
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showNotification('Erfolgreich eingeloggt');
+            } catch (error) {
+                showNotification('Login fehlgeschlagen: ' + error.message, 'error');
             }
-          });
-          csv+="\n";
-        });
-
-        // Download
-        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-        const url= URL.createObjectURL(blob);
-        const link=document.createElement('a');
-        link.href= url;
-        link.setAttribute('download','verfuegbarkeiten_mit_rollen.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch(err){
-        console.error("CSV Fehler:", err);
-        showNotification("Fehler beim CSV-Export: "+err.message,'error');
-      }
-    }
-
-    // Lade alle user docs -> userRolesMap
-    async function loadAllUsersRoles(){
-      userRolesMap={};
-      const snap= await getDocs(collection(db,"users"));
-      snap.forEach(docS=>{
-        const d= docS.data();
-        // email -> roles
-        userRolesMap[d.email]= d.roles||[];
-      });
-    }
-
-    /* ===================
-       Firestore-Listener
-       =================== */
-    function initializeAppData(){
-      const coll=collection(db,"events");
-      onSnapshot(coll,(snapshot)=>{
-        const data=[];
-        snapshot.forEach(docData=>{
-          data.push({ id:docData.id, ...docData.data()});
-        });
-        allEventsData = data; 
-        renderEvents(data);
-
-        if(canRemove){
-          document.getElementById('adminSection').style.display='block';
-          // Wir zeigen Admin-Bereich erst, wenn wir user roles haben -> hier optional
-          // Admin-Tabelle updaten -> erst user roles laden
-          loadAllUsersRoles().then(()=>{
-            renderAdminTable(data);
-          });
-        } else {
-          document.getElementById('adminSection').style.display='none';
         }
-      },(err)=>{
-        console.error('Fehler beim Abrufen:',err);
-        showNotification('Fehler beim Abrufen der Events','error');
-      });
-    }
 
-    /* ===================
-       Admin: neues Event
-       =================== */
-    async function addEvent(){
-      if(!canRemove){
-        showNotification('Nur Admin kann Events anlegen','error');
-        return;
-      }
-      let eventNameVal = document.getElementById('eventName').value.trim();
-      if(!eventNameVal){
-        showNotification('Bitte Eventnamen angeben','error');
-        return;
-      }
-      if(eventNameVal==='sonstige'){
-        const otherVal = document.getElementById('otherEvent').value.trim();
-        if(!otherVal){
-          showNotification('Bitte sonstiges Event benennen','error');
-          return;
+        // Registrierungsfunktion
+        async function handleRegister() {
+            const username = document.getElementById('usernameRegister').value;
+            const email = document.getElementById('emailRegister').value;
+            const password = document.getElementById('passwordRegister').value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await addDoc(collection(db, 'users'), {
+                    uid: userCredential.user.uid,
+                    username,
+                    email,
+                    roles: []
+                });
+                showNotification('Registrierung erfolgreich');
+            } catch (error) {
+                showNotification('Registrierung fehlgeschlagen: ' + error.message, 'error');
+            }
         }
-        eventNameVal = otherVal;
-      }
-      const eventDate = document.getElementById('eventDate').value;
-      const eventTime = document.getElementById('eventTime').value;
-      if(!eventDate || !eventTime){
-        showNotification('Bitte Datum und Uhrzeit wählen','error');
-        return;
-      }
-      try {
-        const qy=query(collection(db,"events"),
-          where("datum","==",eventDate),
-          where("name","==",eventNameVal),
-          where("startzeit","==",eventTime)
-        );
-        const snap=await getDocs(qy);
-        if(!snap.empty){
-          showNotification('Event existiert bereits','error');
-          return;
+
+        // Auth State Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('eventContainer').classList.remove('hidden');
+                document.getElementById('welcomeUser').textContent = `Hallo ${user.email}`;
+                document.getElementById('welcomeUser').classList.remove('hidden');
+            } else {
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('eventContainer').classList.add('hidden');
+            }
+        });
+
+        // Event Listeners
+        document.getElementById('loginButton').addEventListener('click', handleLogin);
+        document.getElementById('registerButton').addEventListener('click', handleRegister);
+
+        // Service Worker Registrierung
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registriert');
+                    });
+            });
         }
-        await addDoc(collection(db,"events"),{
-          datum:eventDate,
-          name:eventNameVal,
-          startzeit:eventTime,
-          mitarbeiter:[],
-          comments:[],
-          importantInfo:""
-        });
-        showNotification('Event hinzugefügt');
-        document.getElementById('eventForm').reset();
-        document.getElementById('otherEventContainer').style.display='none';
-      }catch(err){
-        console.error('Fehler beim Hinzufügen',err);
-        showNotification('Fehler beim Hinzufügen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Admin: Event löschen
-       =================== */
-    async function removeEvent(eventId){
-      if(!canRemove)return;
-      if(!confirm('Möchtest du dieses Event löschen?'))return;
-      try {
-        await deleteDoc(doc(db,"events",eventId));
-        showNotification('Event gelöscht','info');
-      }catch(err){
-        console.error('Fehler beim Löschen',err);
-        showNotification('Fehler beim Löschen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Nutzer: "Ich kann arbeiten!"
-       =================== */
-    async function confirmForEvent(eventId){
-      if(!loggedInUser){
-        showNotification('Bitte einloggen','error');
-        return;
-      }
-      try {
-        await updateDoc(doc(db,"events",eventId),{
-          mitarbeiter:arrayUnion(loggedInUser)
-        });
-        showNotification('Du hast dich angemeldet.');
-      }catch(err){
-        console.error('Fehler beim Bestätigen',err);
-        showNotification('Fehler: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Admin: Mitarbeiter entfernen
-       =================== */
-    async function removeName(eventId,name){
-      if(!canRemove)return;
-      try {
-        await updateDoc(doc(db,"events",eventId),{
-          mitarbeiter:arrayRemove(name)
-        });
-        showNotification('Name entfernt.','info');
-      }catch(err){
-        console.error('Fehler beim Entfernen',err);
-        showNotification('Fehler beim Entfernen: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       Auth
-       =================== */
-    onAuthStateChanged(auth,(user)=>{
-      if(user){
-        loggedInUser = user.displayName || user.email;
-        loggedInEmail = user.email;
-        canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
-        updateUIAfterLogin();
-        initializeAppData();
-      } else {
-        loggedInUser=null;
-        loggedInEmail=null;
-        canRemove=false;
-        updateUIAfterLogout();
-      }
-    });
-
-    /* ===================
-       Login / Register
-       =================== */
-    async function loginWithEmail(){
-      const emailVal = document.getElementById('emailInput').value.trim();
-      const pwVal = document.getElementById('passwordLogin').value;
-      const staySigned = document.getElementById('staySignedIn').checked;
-
-      if(!emailVal||!pwVal){
-        showNotification('Bitte E-Mail und Passwort eingeben','error');
-        return;
-      }
-      const pType = staySigned? browserLocalPersistence: browserSessionPersistence;
-      try{
-        await setPersistence(auth,pType);
-        const cred = await signInWithEmailAndPassword(auth,emailVal,pwVal);
-        const user= cred.user;
-        canRemove = (user.email.toLowerCase()==='moritz@goethebunker.de');
-        loggedInUser = user.displayName || user.email;
-        showNotification(`${loggedInUser} ist eingeloggt.`,'success');
-      }catch(err){
-        console.error('Login Fehler',err);
-        showNotification('Login Fehler: '+err.message,'error');
-      }
-    }
-    async function registerWithEmail(){
-      const nameVal = document.getElementById('usernameRegister').value.trim();
-      const emailVal= document.getElementById('emailRegister').value.trim();
-      const pwVal   = document.getElementById('passwordRegister').value;
-      if(!nameVal||!emailVal||!pwVal){
-        showNotification('Bitte Benutzername,E-Mail,Passwort.','error');
-        return;
-      }
-      try{
-        const cred= await createUserWithEmailAndPassword(auth,emailVal,pwVal);
-        await updateProfile(cred.user,{ displayName: nameVal });
-        // Optional: in "users" collection anlegen
-        // roles: []
-        await addDoc(collection(db,"users"),{
-          email: emailVal,
-          username: nameVal,
-          roles:[]
-        });
-        showNotification('Registrierung erfolgreich. Bitte einloggen.','success');
-      }catch(err){
-        console.error('Reg Fehler',err);
-        showNotification('Reg Fehler: '+err.message,'error');
-      }
-    }
-
-    async function logout(){
-      try{
-        await auth.signOut();
-        showNotification('Erfolgreich ausgeloggt','info');
-      }catch(err){
-        console.error('Logout Fehler',err);
-        showNotification('Logout Fehler: '+err.message,'error');
-      }
-    }
-
-    /* ===================
-       UI
-       =================== */
-    function updateUIAfterLogin(){
-      document.getElementById('authSection').style.display='none';
-      document.getElementById('eventForm').style.display= canRemove ? 'block':'none';
-      const userLabel = document.getElementById('welcomeUser');
-      userLabel.textContent='Willkommen, '+loggedInUser+'!';
-      userLabel.style.display='block';
-      document.getElementById('logoutButton').style.display='inline-block';
-
-      // Admin: "Mitarbeiter verwalten" (adminUsers.html)
-      if(canRemove){
-        document.getElementById('manageUsersBtn').style.display='inline-block';
-      } else {
-        document.getElementById('manageUsersBtn').style.display='none';
-      }
-    }
-    function updateUIAfterLogout(){
-      document.getElementById('authSection').style.display='block';
-      document.getElementById('eventForm').style.display='none';
-      document.getElementById('welcomeUser').style.display='none';
-      document.getElementById('logoutButton').style.display='none';
-      document.getElementById('adminSection').style.display='none';
-      document.getElementById('eventContainer').innerHTML='';
-    }
-
-    function toggleOtherEvent(){
-      const val = document.getElementById('eventName').value;
-      document.getElementById('otherEventContainer').style.display= (val==='sonstige') ? 'block':'none';
-    }
-
-    /* ===================
-       Start
-       =================== */
-    document.addEventListener('DOMContentLoaded',()=>{
-      setCurrentDate();
-
-      document.getElementById('loginButton').addEventListener('click',loginWithEmail);
-      document.getElementById('registerButton').addEventListener('click',registerWithEmail);
-      document.getElementById('logoutButton').addEventListener('click',logout);
-
-      // Admin: "Mitarbeiter verwalten"
-      document.getElementById('manageUsersBtn').addEventListener('click',()=>{
-        window.location.href='adminUsers.html';
-      });
-    });
-
-    // Für Inline
-    window.removeEvent = removeEvent;
-    window.removeName  = removeName;
-    window.confirmForEvent = confirmForEvent;
-    window.addEvent    = addEvent;
-    window.toggleOtherEvent= toggleOtherEvent;
-    window.exportCSV   = exportCSV;
-	
-        // Hier den bestehenden Firebase-Code einfügen
     </script>
 </body>
 </html>
