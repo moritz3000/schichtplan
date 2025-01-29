@@ -9,311 +9,186 @@
     <title>Bunker Schichten</title>
     <link rel="manifest" href="/manifest.json">
     <style>
-    :root {
-      --primary-color: #007bff;
-      --secondary-color: #6c757d;
-      --danger-color: #dc3545;
-      --background-color: #f5f5f5;
-      --white: #ffffff;
-      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      --border-radius: 8px;
-      --shadow: 0 4px 6px rgba(0,0,0,0.1);
-      --button-padding: 8px 12px;
-    }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --error: #ef4444;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: var(--font-family);
-      background-color: var(--background-color);
-      color: #333;
-      padding-bottom: 60px;
-      margin: 0;
-    }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    header {
-      background-color: var(--primary-color);
-      color: var(--white);
-      padding: 0 15px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 1.4em;
-      box-shadow: var(--shadow);
-    }
-    .title {
-      font-weight: bold;
-      font-size: 1.2em;
-    }
-    #welcomeUser {
-      font-size: 1em;
-      margin-right: 10px;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            touch-action: manipulation;
+        }
 
-    .container {
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
-    }
+        .app-container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 0 16px 80px;
+        }
 
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
+        .app-header {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            padding: 16px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
 
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: var(--border-radius);
-      font-size: 1em;
-    }
+        .app-header h1 {
+            font-size: 1.25rem;
+            margin: 0;
+            color: var(--primary);
+        }
 
-    button {
-      padding: var(--button-padding);
-      background-color: var(--primary-color);
-      color: var(--white);
-      border: none;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-size: 1em;
-      margin-bottom: 16px;
-    }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
 
-    .event {
-      background-color: var(--white);
-      border: 1px solid #ddd;
-      border-radius: var(--border-radius);
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-      position: relative;
-    }
-    .event h3 {
-      margin: 0 0 8px;
-      color: var(--primary-color);
-    }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.75rem;
+        }
 
-    .availability {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .name-item {
-      background-color: #e9ecef;
-      padding: 6px 10px;
-      border-radius: var(--border-radius);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.9em;
-      margin-bottom: 6px;
-    }
-    .name-item .remove {
-      background-color: var(--danger-color);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      font-size: 0.8em;
-      cursor: pointer;
-    }
+        .input-group {
+            margin-bottom: 16px;
+        }
 
-    #adminSection {
-      display: none;
-      margin-top: 40px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 16px;
-    }
-    table, th, td {
-      border: 1px solid #ddd;
-    }
-    th, td {
-      padding: 12px;
-      font-size: 1em;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-      color: #333;
-    }
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--surface);
+            transition: border-color 0.2s;
+        }
 
-    footer {
-      background-color: var(--secondary-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 8px;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-    }
-    #logoutButton {
-      background-color: var(--danger-color);
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 6px 12px;
-      cursor: pointer;
-      display: none;
-      font-size: 0.9em;
-    }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-    #notification {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 2000;
-      max-width: 90%;
-    }
-    .notification-message {
-      background-color: #28a745;
-      color: #fff;
-      padding: 10px 20px;
-      margin-bottom: 10px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      opacity: 0.95;
-    }
-    .notification-error {
-      background-color: #dc3545;
-    }
-    .notification-info {
-      background-color: #17a2b8;
-    }
+        .event-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
 
-    @media (max-width: 768px) {
-      .event {
-        padding: 16px;
-      }
-      button {
-        font-size: 1em;
-      }
-    }
+        .notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .hidden { display: none; }
+        .text-center { text-align: center; }
+        .mt-16 { margin-top: 16px; }
     </style>
 </head>
 <body>
-<header>
-    <div class="title">Goethebunker Schichtplanung</div>
-    <div id="welcomeUser" style="display:none;">Willkommen!</div>
-  </header>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Bunker Schichten</h1>
+            <div id="welcomeUser" class="hidden"></div>
+        </header>
 
-  <div id="notification"></div>
+        <div id="notification"></div>
 
-  <div class="container">
-    <p id="currentDate" style="font-size: 1.1em; margin-bottom: 20px;"></p>
+        <!-- Auth Section -->
+        <section id="authSection" class="mt-16">
+            <h2 class="text-center">Anmelden</h2>
+            <div class="input-group">
+                <input type="email" id="emailInput" class="input-field" placeholder="E-Mail">
+            </div>
+            <div class="input-group">
+                <input type="password" id="passwordLogin" class="input-field" placeholder="Passwort">
+            </div>
+            <button class="btn" id="loginButton">Anmelden</button>
 
-    <!-- Login/Register-Bereich -->
-    <div id="authSection">
-      <h3>Einloggen</h3>
-      <label for="emailInput">E-Mail:</label>
-      <input type="email" id="emailInput" placeholder="E-Mail eingeben">
+            <div class="text-center mt-16">
+                <h3>Neuer Benutzer?</h3>
+                <div class="input-group">
+                    <input type="text" id="usernameRegister" class="input-field" placeholder="Benutzername">
+                </div>
+                <div class="input-group">
+                    <input type="email" id="emailRegister" class="input-field" placeholder="E-Mail">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="passwordRegister" class="input-field" placeholder="Passwort">
+                </div>
+                <button class="btn" id="registerButton">Registrieren</button>
+            </div>
+        </section>
 
-      <label for="passwordLogin">Passwort:</label>
-      <input type="password" id="passwordLogin" placeholder="Passwort eingeben">
-
-      <div style="margin-bottom:16px;">
-        <input type="checkbox" id="staySignedIn" />
-        <label for="staySignedIn" style="font-weight:normal;">Angemeldet bleiben</label>
-      </div>
-
-      <button id="loginButton">Einloggen</button>
-      <hr />
-
-      <h4>Oder registrieren</h4>
-      <label for="usernameRegister">Benutzername:</label>
-      <input type="text" id="usernameRegister" placeholder="Dein gewünschter Name">
-
-      <label for="emailRegister">E-Mail:</label>
-      <input type="email" id="emailRegister" placeholder="E-Mail eingeben">
-
-      <label for="passwordRegister">Passwort:</label>
-      <input type="password" id="passwordRegister" placeholder="Passwort eingeben">
-
-      <button id="registerButton">Registrieren</button>
+        <!-- Event Management -->
+        <section id="eventContainer" class="hidden"></section>
     </div>
 
-    <!-- Admin: Neues Event hinzufügen -->
-    <form id="eventForm" style="display: none;">
-      <h3>Neues Event hinzufügen</h3>
-      <label for="eventName">Event Name:</label>
-      <select id="eventName" onchange="toggleOtherEvent()">
-        <option value="">-- Wähle ein Event --</option>
-        <option value="Bunkernacht">Bunkernacht</option>
-        <option value="Pferdreht">Pferdreht</option>
-        <option value="IDOLS">IDOLS</option>
-        <option value="Baracke">Baracke</option>
-        <option value="Crypt">Crypt</option>
-        <option value="Dancehall Station">Dancehall Station</option>
-        <option value="LOL">LOL</option>
-        <option value="sonstige">Sonstige</option>
-      </select>
-
-      <div id="otherEventContainer" style="display:none;">
-        <label for="otherEvent">Sonstiges Event:</label>
-        <input type="text" id="otherEvent" />
-      </div>
-
-      <div style="display:flex; gap:20px;">
-        <div style="flex:1;">
-          <label for="eventDate">Datum:</label>
-          <input type="date" id="eventDate">
-        </div>
-        <div style="flex:1;">
-          <label for="eventTime">Startzeit:</label>
-          <input type="time" id="eventTime">
-        </div>
-      </div>
-
-      <button type="button" onclick="addEvent()">Event hinzufügen</button>
-      <hr/>
-    </form>
-
-    <!-- Event-Übersicht -->
-    <div id="eventContainer"></div>
-
-    <!-- Admin-Bereich: Verfügbarkeits-Tabelle -->
-    <div id="adminSection">
-      <h3>Verfügbarkeits-Tabelle (nur Admin)</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Event</th>
-            <!-- Dynamische Positions-Spalten -->
-            <th>Theke</th>
-            <th>Garderobe</th>
-            <th>Tür</th>
-            <th>Kasse</th>
-            <th>Schichtleitung</th>
-          </tr>
-        </thead>
-        <tbody id="availabilityTable"></tbody>
-      </table>
-      <button type="button" onclick="exportCSV()">Als CSV exportieren</button>
-
-      <!-- Admin-Button, um auf adminUsers.html zu gehen -->
-      <button id="manageUsersBtn" style="display:none;">Mitarbeiter verwalten</button>
-    </div>
-  </div>
-
-  <footer>
-    <button id="logoutButton">Logout</button>
-  </footer>
-
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item">
+            <span>Schichten</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span>Kalender</span>
+        </a>
+        <a href="#" class="nav-item">
+            <span>Profil</span>
+        </a>
+    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -330,21 +205,22 @@
             onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase Konfiguration
+        // Firebase Config
         const firebaseConfig = {
-            apiKey: "DEINE_API_KEY",
-            authDomain: "DEIN_PROJEKT.firebaseapp.com",
-            projectId: "DEIN_PROJEKT",
-            storageBucket: "DEIN_PROJEKT.appspot.com",
-            messagingSenderId: "DEINE_SENDER_ID",
-            appId: "DEINE_APP_ID"
+            apiKey: "AIzaSyADch6nVtF-ljkPWvsae-rHEaiuKJSswY0",
+            authDomain: "schichtplan-5c70f.firebaseapp.com",
+            projectId: "schichtplan-5c70f",
+            storageBucket: "schichtplan-5c70f.appspot.com",
+            messagingSenderId: "502149312331",
+            appId: "1:502149312331:web:1dbce2d7fa034f25d702ce",
+            measurementId: "G-0DL0R5B7LV"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Login Funktion
+        // Login Handler
         async function handleLogin() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordLogin').value;
@@ -353,11 +229,11 @@
                 await signInWithEmailAndPassword(auth, email, password);
                 showNotification('Erfolgreich eingeloggt');
             } catch (error) {
-                showNotification('Login fehlgeschlagen: ' + error.message, 'error');
+                showNotification('Fehler: ' + error.message, 'error');
             }
         }
 
-        // Registrierungsfunktion
+        // Registration Handler
         async function handleRegister() {
             const username = document.getElementById('usernameRegister').value;
             const email = document.getElementById('emailRegister').value;
@@ -373,11 +249,11 @@
                 });
                 showNotification('Registrierung erfolgreich');
             } catch (error) {
-                showNotification('Registrierung fehlgeschlagen: ' + error.message, 'error');
+                showNotification('Fehler: ' + error.message, 'error');
             }
         }
 
-        // Auth State Listener
+        // Auth State Observer
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('authSection').classList.add('hidden');
@@ -394,15 +270,33 @@
         document.getElementById('loginButton').addEventListener('click', handleLogin);
         document.getElementById('registerButton').addEventListener('click', handleRegister);
 
-        // Service Worker Registrierung
+        // Notification System
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type === 'error' ? 'error' : ''}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // PWA Installation
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then(registration => {
-                        console.log('ServiceWorker registriert');
+                        console.log('Service Worker registriert');
                     });
             });
         }
+
+        // Prevent Zoom
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('touchmove', e => {
+            if(e.scale !== 1) e.preventDefault();
+        }, { passive: false });
     </script>
 </body>
 </html>
