@@ -2,8 +2,7 @@ const CACHE_NAME = 'bunker-app-v1';
 const ASSETS = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js'
+  '/styles.css'
 ];
 
 self.addEventListener('install', (event) => {
